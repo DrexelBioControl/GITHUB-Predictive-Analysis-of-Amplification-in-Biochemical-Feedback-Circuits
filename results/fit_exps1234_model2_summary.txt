@@ -1,0 +1,92 @@
+RUN SUMMARY
+==================================================
+
+Run name       : fit_exps1234_model2
+Model          : model2_inactivegate_fuel
+Mode           : fit
+Fit conditions : ['1p25in_0fuel', '2p5in_0fuel', '0in_25fuel', '1p25in_25fuel']
+Held-out       : 2p5in_25fuel
+N starts       : 50
+Random seed    : 1
+Excel file     : data/in_vitro_ctRSD_modeling_data.xls
+Sheet          : Fig. 4H (SciAdv) fuel
+Results file   : results/fit_exps1234_model2_results.npz
+
+FIT PARAMETERS
+--------------------------------------------------
+k_txn           = 8.93001608e-03
+ksd             = 2.85243578e-05
+kfsd            = 1.70938887e-06
+krev            = 9.67553646e-06
+kf_rep          = 3.61023838e-06
+kRz             = 1.55378285e-01
+kfld            = 6.40184394e+00
+klk             = 2.61029023e-04
+basal_frac      = 4.55864559e-02
+
+FIT STATISTICS
+--------------------------------------------------
+Best cost (0.5 * SSE) = 1.12090346e-02
+Best SSE (normalized) = 2.24180692e-02
+
+RMSE (per dataset)
+--------------------------------------------------
+1p25in_0fuel              = 4.30482698e+01
+2p5in_0fuel               = 1.16685338e+01
+0in_25fuel                = 4.35412415e+01
+1p25in_25fuel             = 3.88928986e+01
+
+Held-out (2p5in_25fuel) = 4.05189584e+01
+
+GLOBAL RMSE
+--------------------------------------------------
+Fit datasets : 2.79241639e-03
+All datasets : 3.10918136e-03
+
+DATASET WINDOWS
+--------------------------------------------------
+1p25in_0fuel
+  Type        : fitted
+  IN          : 1.25 nM
+  Fuel        : 0 nM
+  t_start     : 0.00 min
+  t_end       : 1000.13 min
+  n_points    : 1306
+  DRL_0       : 490.73 nM
+
+2p5in_0fuel
+  Type        : fitted
+  IN          : 2.5 nM
+  Fuel        : 0 nM
+  t_start     : 0.00 min
+  t_end       : 400.20 min
+  n_points    : 523
+  DRL_0       : 485.83 nM
+
+0in_25fuel
+  Type        : fitted
+  IN          : 0 nM
+  Fuel        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 600.12 min
+  n_points    : 784
+  DRL_0       : 491.79 nM
+
+1p25in_25fuel
+  Type        : fitted
+  IN          : 1.25 nM
+  Fuel        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 200.10 min
+  n_points    : 262
+  DRL_0       : 487.32 nM
+
+2p5in_25fuel
+  Type        : held-out
+  IN          : 2.5 nM
+  Fuel        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 150.27 min
+  n_points    : 197
+  DRL_0       : 482.73 nM
+
