@@ -7,11 +7,13 @@
 # This file maps that string to the correct Python model module.
 # ============================================================
 
+from models import model0_transcriptional
 from models import model1_activegate_fuel
 from models import model2_inactivegate_fuel
 
 
 MODEL_REGISTRY = {
+    "model0_transcriptional": model0_transcriptional,
     "model1_activegate_fuel": model1_activegate_fuel,
     "model2_inactivegate_fuel": model2_inactivegate_fuel,
 }
