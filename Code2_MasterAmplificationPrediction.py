@@ -1,29 +1,85 @@
 # ============================================================
-# PREDICT AMPLIFICATION FROM BEST-FIT MODEL
+# MASTER AMPLIFICATION PREDICTION
+# Heatmap + line plots for selected fitted model
 # ============================================================
 
 import json
 import sys
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
-import xlrd
 
-from pathlib import Path
 from scipy.integrate import solve_ivp
+from matplotlib.ticker import MaxNLocator
 
-# Make paths relative to this script, not the terminal folder
+
+# ============================================================
+# 0) PATHS AND USER CHOICES
+# ============================================================
+
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 
-# Load model registry
 from model_registry import get_model
 
 
-# ============================================================
-# 0) LOAD CONFIG
-# ============================================================
-
+# ------------------------------------------------------------
+# Choose fitted model/config here
+# ------------------------------------------------------------
 CONFIG_FILE = BASE_DIR / "configs" / "fit_exps12345_model2.json"
+
+# ------------------------------------------------------------
+# Choose input concentration for ON condition
+# ------------------------------------------------------------
+IN_CONC = 2.5
+IN_OFF = 0.0
+
+# ------------------------------------------------------------
+# Fuel sweep for heatmap
+# ------------------------------------------------------------
+FUELS = np.linspace(0.0, 50.0, 51)
+
+# Fuel values to plot as line plots
+FUEL_VALUES_TO_PLOT = [25]
+
+# ------------------------------------------------------------
+# Time grid for prediction
+# ------------------------------------------------------------
+T_END_MIN = 200
+N_TIMEPOINTS = 1000
+
+t_eval_sec = np.linspace(0.0, T_END_MIN * 60.0, N_TIMEPOINTS)
+t_minutes = t_eval_sec / 60.0
+
+# ------------------------------------------------------------
+# Reporter amount used for prediction
+# ------------------------------------------------------------
+REPORTER_0 = 500.0
+
+# ------------------------------------------------------------
+# Rate floor for stable amplification ratios
+# ------------------------------------------------------------
+RATE_FLOOR = 1e-8
+
+# ------------------------------------------------------------
+# Optional parameter sweep
+#
+# For model2_inactivegate_fuel, use "klk"
+# For model1_activegate_fuel, use "klkg"
+# For model0_transcriptional, use "basal_frac" or set to None
+# ------------------------------------------------------------
+SWEEP_PARAM = None
+SWEEP_VALUES = [1e-7, 1e-5, 1e-3]
+
+# If you only want one row using the best-fit parameter value:
+# SWEEP_PARAM = None
+# SWEEP_VALUES = None
+
+
+# ============================================================
+# 1) LOAD CONFIG, MODEL, AND FITTED PARAMETERS
+# ============================================================
 
 config = json.load(open(CONFIG_FILE))
 
@@ -32,20 +88,6 @@ MODEL_NAME = config["model_name"]
 
 model = get_model(MODEL_NAME)
 
-FIT_CONDITIONS = config["fit_conditions"]
-ALL_CONDITIONS = config["all_conditions"]
-
-# Identify held-out condition if one exists
-held_out_list = [
-    c for c in ALL_CONDITIONS
-    if c not in FIT_CONDITIONS
-]
-HELD_OUT_CONDITION = (
-    held_out_list[0]
-    if len(held_out_list) > 0
-    else None
-)
-
 FIT_PARAMS = config["fit_params"]
 
 ALL_PARAM_INFO = {
@@ -53,453 +95,386 @@ ALL_PARAM_INFO = {
     for p, v in config["all_param_central"].items()
 }
 
-row_end_map = {
-    int(k): int(v)
-    for k, v in config["row_end_map"].items()
-}
-
-EXCEL_FILE = BASE_DIR / config.get(
-    "excel_file",
-    "data/in_vitro_ctRSD_modeling_data.xls"
-)
-
-EXCEL_SHEET = config.get(
-    "excel_sheet",
-    "Fig. 4H (SciAdv) fuel"
-)
-
 RESULTS_DIR = BASE_DIR / config.get("results_dir", "results")
-FIT_RESULTS_FILE = RESULTS_DIR / f"{RUN_NAME}_results.npz"
 
-FIGURES_DIR = BASE_DIR / "figures"
-FIGURES_DIR.mkdir(exist_ok=True)
+# Try common result filenames
+result_candidates = [
+    RESULTS_DIR / f"{RUN_NAME}_results.npz",
+    RESULTS_DIR / f"{RUN_NAME}.npz",
+]
 
+if "fit_results_file" in config:
+    result_candidates.append(RESULTS_DIR / config["fit_results_file"])
 
-# ============================================================
-# 1) LOAD EXPERIMENTAL DATA
-# ============================================================
+FIT_RESULTS_FILE = None
 
-wb = xlrd.open_workbook(str(EXCEL_FILE))
-ws = wb.sheet_by_name(EXCEL_SHEET)
+for p in result_candidates:
+    if p.exists():
+        FIT_RESULTS_FILE = p
+        break
 
-CONDITIONS = {
-    "0in_0fuel":      (0, 0.0, 0.0),
-    "1p25in_0fuel":  (1, 1.25, 0.0),
-    "2p5in_0fuel":   (2, 2.5, 0.0),
-    "0in_25fuel":    (3, 0.0, 25.0),
-    "1p25in_25fuel": (4, 1.25, 25.0),
-    "2p5in_25fuel":  (5, 2.5, 25.0),
-}
+if FIT_RESULTS_FILE is None:
+    raise FileNotFoundError(
+        "Could not find fitted results file. Tried:\n"
+        + "\n".join(str(p) for p in result_candidates)
+    )
 
-
-# ============================================================
-# 2) USER CHOICES
-# ============================================================
-
-IN_VALUES = [1.25, 2.5]
-
-rate_floor = 1e-3   # nM/s
-
-
-# ============================================================
-# 3) LOAD BEST-FIT PARAMETERS
-# ============================================================
 
 def load_best_fit_params(results_file, all_param_info):
+    """
+    Load best-fit parameters from saved optimizer output.
+    Assumes best_x is stored in log10 parameter space.
+    """
 
-    # Load saved optimizer output
     data = np.load(results_file, allow_pickle=True)
 
-    # Extract best-fit log10 parameter vector
     best_x = data["best_x"]
-
-    # Retrieve fitted parameter names
     fit_params = list(data["fit_params"])
 
-    # Start from central/default parameter values
     params = {
         p: all_param_info[p]["central"]
         for p in all_param_info
     }
 
-    # Replace fitted parameters with optimized physical values
     for i, p in enumerate(fit_params):
-        params[p] = 10**best_x[i]
+        params[p] = float(10 ** best_x[i])
 
     return params
 
 
-best_params = load_best_fit_params(
+base_params = load_best_fit_params(
     FIT_RESULTS_FILE,
     ALL_PARAM_INFO
 )
 
-print(f"Loaded best-fit parameters from: {FIT_RESULTS_FILE}")
+print(f"Loaded model: {MODEL_NAME}")
+print(f"Loaded config: {CONFIG_FILE}")
+print(f"Loaded fit: {FIT_RESULTS_FILE}")
 
-print("\nFinal parameter values used for prediction:")
-
-for p, v in best_params.items():
+print("\nBest-fit parameter values:")
+for p, v in base_params.items():
     print(f"{p:<15} = {v:.8e}")
 
 
 # ============================================================
-# 4) BUILD FULL DATASETS FOR PREDICTION
+# 2) SIMULATION HELPERS
 # ============================================================
 
-def build_full_dataset(cond):
+def make_dataset(IN_value, Fuel_value, DRL_0=REPORTER_0):
+    """
+    Minimal dataset dictionary expected by model.initial_conditions().
+    """
 
-    # Look up column index and experimental concentrations
-    col_idx, IN_conc, Fuel_conc = CONDITIONS[cond]
-
-    # Lists for full experimental timecourse
-    t = []
-    x = []
-
-    # Load full trajectory from Excel
-    for r in range(3, ws.nrows):
-
-        # Time is always stored in Excel column 0
-        t.append(ws.cell_value(r, 0))
-
-        # Signal column is shifted by one because time uses column 0
-        x.append(ws.cell_value(r, col_idx + 1))
-
-    # Convert time to numpy array
-    t = np.array(t)
-
-    # Convert fraction reacted to nM reacted
-    x = np.array(x) * 500.0
-
-    # Use configured plateau cutoff if available
-    if col_idx in row_end_map:
-
-        row_end = row_end_map[col_idx]
-
-    # Otherwise use last 20% of trace as plateau estimate
-    else:
-
-        row_end = int(0.8 * ws.nrows)
-
-    # Store plateau-region signal values
-    x_plateau = []
-
-    # Read plateau region for reporter estimate
-    for r in range(row_end, ws.nrows):
-        x_plateau.append(ws.cell_value(r, col_idx + 1))
-
-    # Convert plateau signal to nM
-    x_plateau = np.array(x_plateau) * 500.0
-
-    # Estimate initial reporter pool from plateau
-    DRL_0 = np.mean(x_plateau) if len(x_plateau) > 0 else x[-1]
-
-    # Return dataset in same format expected by model.initial_conditions()
     return {
-        "name": cond,
-        "t_exp": t,
-        "x_exp": x,
-        "IN_conc": IN_conc,
-        "Fuel_conc": Fuel_conc,
-        "DRL_0": DRL_0,
-        "RSD_temp": 25.0
+        "name": f"IN_{IN_value}_Fuel_{Fuel_value}",
+        "t_exp": t_minutes,
+        "x_exp": np.zeros_like(t_minutes),
+        "IN_conc": float(IN_value),
+        "Fuel_conc": float(Fuel_value),
+        "DRL_0": float(DRL_0),
+        "RSD_temp": 25.0,
     }
 
 
-# Build all six experimental conditions needed for amplification
-FULL_DATASETS = {
-    cond: build_full_dataset(cond)
-    for cond in CONDITIONS
-}
+def simulate_ROL_and_rate(IN_value, Fuel_value, params, DRL_0=REPORTER_0):
+    """
+    Simulate model and extract ROL and dROL/dt directly from the ODE.
+    """
 
+    d = make_dataset(IN_value, Fuel_value, DRL_0=DRL_0)
 
-def get_full_dataset_by_condition(IN_conc, Fuel_conc):
-
-    # Find dataset matching desired input/fuel condition
-    for d in FULL_DATASETS.values():
-
-        if (
-            d["IN_conc"] == IN_conc and
-            d["Fuel_conc"] == Fuel_conc
-        ):
-            return d
-
-    raise ValueError(
-        f"No dataset found for IN = {IN_conc}, Fuel = {Fuel_conc}"
-    )
-
-
-# ============================================================
-# 5) SIMULATE MODEL AND EXTRACT dROL/dt FROM THE ODE
-# ============================================================
-
-def simulate_ROL_and_rate(d, params):
-
-    # Read experimental time grid in minutes
-    t_min = np.asarray(d["t_exp"], dtype=float)
-
-    # Convert time grid to seconds for ODE solver
-    t_sec = t_min * 60.0
-
-    # Build model initial condition vector
     y0 = model.initial_conditions(d, params)
 
-    # Solve model on experimental time grid
     sol = solve_ivp(
-
         lambda t, y: model.rhs(
             t,
             y,
             RSD_temp=d["RSD_temp"],
             IN_temp=d["IN_conc"],
             F_temp=d["Fuel_conc"],
-            params=params
+            params=params,
         ),
-
-        (t_sec[0], t_sec[-1]),
-
+        (t_eval_sec[0], t_eval_sec[-1]),
         y0,
-
-        t_eval=t_sec,
-
+        t_eval=t_eval_sec,
         method="LSODA",
-
         rtol=1e-6,
-        atol=1e-6
+        atol=1e-6,
     )
 
     if not sol.success:
         raise RuntimeError(sol.message)
 
-    # Extract simulated reporter output trajectory
     ROL = sol.y[model.output_index]
 
-    # Allocate array for model-based reporter production rate
     dROL_dt = np.zeros_like(ROL)
 
-    # Evaluate model RHS at every simulated time point
-    for i in range(len(t_sec)):
+    for i in range(len(t_eval_sec)):
 
         rhs_i = model.rhs(
-            t_sec[i],
+            t_eval_sec[i],
             sol.y[:, i],
             RSD_temp=d["RSD_temp"],
             IN_temp=d["IN_conc"],
             F_temp=d["Fuel_conc"],
-            params=params
+            params=params,
         )
 
-        # Extract dROL/dt directly from ROL equation
         dROL_dt[i] = rhs_i[model.output_index]
 
     return ROL, dROL_dt
 
 
-# ============================================================
-# 6) COMPUTE PREDICTED AMPLIFICATION
-# ============================================================
+def compute_amplification(params):
+    """
+    Compute normalized amplification:
 
-predicted_results = []
+        A0(t,f) = v_ON(t,f) / v_OFF(t,f)
 
-for IN_val in IN_VALUES:
+        A(t,f) = A0(t,f) / A0(t,0)
 
-    # Retrieve four conditions needed for normalized amplification
-    d_IN_0  = get_full_dataset_by_condition(IN_val, 0.0)
-    d_0_0   = get_full_dataset_by_condition(0.0,    0.0)
-    d_IN_25 = get_full_dataset_by_condition(IN_val, 25.0)
-    d_0_25  = get_full_dataset_by_condition(0.0,    25.0)
+               = [v_ON(t,f) * v_OFF(t,0)]
+                 -------------------------
+                 [v_OFF(t,f) * v_ON(t,0)]
+    """
 
-    # Use shared experimental time grid
-    t_common_min = d_IN_0["t_exp"]
+    # Zero-fuel baseline
+    _, v_on_0 = simulate_ROL_and_rate(
+        IN_CONC,
+        0.0,
+        params,
+        DRL_0=REPORTER_0,
+    )
 
-    if not (
-        np.allclose(t_common_min, d_0_0["t_exp"]) and
-        np.allclose(t_common_min, d_IN_25["t_exp"]) and
-        np.allclose(t_common_min, d_0_25["t_exp"])
-    ):
+    _, v_off_0 = simulate_ROL_and_rate(
+        IN_OFF,
+        0.0,
+        params,
+        DRL_0=REPORTER_0,
+    )
 
-        raise ValueError("Time grids are not identical.")
-
-    # Simulate four conditions and extract ODE-based production rates
-    ROL_IN_0,  dIN0_dt  = simulate_ROL_and_rate(d_IN_0,  best_params)
-    ROL_0_0,   d00_dt   = simulate_ROL_and_rate(d_0_0,   best_params)
-    ROL_IN_25, dIN25_dt = simulate_ROL_and_rate(d_IN_25, best_params)
-    ROL_0_25,  d025_dt  = simulate_ROL_and_rate(d_0_25,  best_params)
-
-    # Allocate amplification array
-    A_pred_new = np.full_like(
-        t_common_min,
+    A = np.full(
+        (len(FUELS), len(t_eval_sec)),
         np.nan,
-        dtype=float
+        dtype=float,
     )
 
-    # Only compute amplification where all four rates are sufficiently nonzero
-    valid = (
-        (np.abs(dIN25_dt) >= rate_floor) &
-        (np.abs(d025_dt)  >= rate_floor) &
-        (np.abs(dIN0_dt)  >= rate_floor) &
-        (np.abs(d00_dt)   >= rate_floor)
-    )
+    for i, fuel in enumerate(FUELS):
 
-    # Compute model-predicted normalized amplification
-    A_pred_new[valid] = (
+        _, v_on_f = simulate_ROL_and_rate(
+            IN_CONC,
+            fuel,
+            params,
+            DRL_0=REPORTER_0,
+        )
 
-        dIN25_dt[valid] * d00_dt[valid]
+        _, v_off_f = simulate_ROL_and_rate(
+            IN_OFF,
+            fuel,
+            params,
+            DRL_0=REPORTER_0,
+        )
 
-    ) / (
+        valid = (
+            (np.abs(v_on_f) >= RATE_FLOOR) &
+            (np.abs(v_off_f) >= RATE_FLOOR) &
+            (np.abs(v_on_0) >= RATE_FLOOR) &
+            (np.abs(v_off_0) >= RATE_FLOOR)
+        )
 
-        d025_dt[valid] * dIN0_dt[valid]
+        A[i, valid] = (
+            v_on_f[valid] * v_off_0[valid]
+        ) / (
+            v_off_f[valid] * v_on_0[valid]
+        )
 
-    )
-
-    predicted_results.append({
-
-        "IN_val": IN_val,
-
-        "t_common_min": t_common_min,
-
-        "ROL_IN_0": ROL_IN_0,
-        "ROL_0_0": ROL_0_0,
-        "ROL_IN_25": ROL_IN_25,
-        "ROL_0_25": ROL_0_25,
-
-        "dIN0_dt": dIN0_dt,
-        "d00_dt": d00_dt,
-        "dIN25_dt": dIN25_dt,
-        "d025_dt": d025_dt,
-
-        "A_pred_new": A_pred_new,
-
-        "valid": valid
-    })
-
-
-print(
-    f"\nComputed predicted amplification for "
-    f"{len(predicted_results)} input conditions."
-)
+    return A
 
 
 # ============================================================
-# 7) PLOT PREDICTED ROL TRAJECTORIES AND PRODUCTION RATES
+# 3) RUN PARAMETER SWEEP
 # ============================================================
 
-for res in predicted_results:
+A_all = []
+row_labels = []
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+if SWEEP_PARAM is None:
 
-    axes[0].plot(
-        res["t_common_min"],
-        res["ROL_IN_25"],
-        label="IN, Fuel = 25"
-    )
+    A = compute_amplification(base_params.copy())
+    A_all.append(A)
+    row_labels.append("Best-fit parameters")
 
-    axes[0].plot(
-        res["t_common_min"],
-        res["ROL_0_25"],
-        label="OFF, Fuel = 25"
-    )
+else:
 
-    axes[0].set_xlabel("Time (min)")
-    axes[0].set_ylabel("ROL reacted (nM)")
-    axes[0].set_title(f"Predicted ROL | IN = {res['IN_val']} nM")
-    axes[0].grid(True)
-    axes[0].legend(fontsize=8)
-    axes[0].set_xlim(0, 1000)
+    if SWEEP_PARAM not in base_params:
+        raise ValueError(
+            f"SWEEP_PARAM = {SWEEP_PARAM} is not in parameter set.\n"
+            f"Available parameters are: {list(base_params.keys())}"
+        )
 
-    axes[1].plot(
-        res["t_common_min"],
-        res["dIN25_dt"],
-        label="IN rate"
-    )
+    for val in SWEEP_VALUES:
 
-    axes[1].plot(
-        res["t_common_min"],
-        res["d025_dt"],
-        label="OFF rate"
-    )
+        params = base_params.copy()
+        params[SWEEP_PARAM] = float(val)
 
-    axes[1].set_xlabel("Time (min)")
-    axes[1].set_ylabel("dROL/dt (nM/s)")
-    axes[1].set_title("ODE-based production rate")
-    axes[1].grid(True)
-    axes[1].legend(fontsize=8)
-    axes[1].set_xlim(0, 1000)
+        print(f"\nComputing amplification for {SWEEP_PARAM} = {val:.3e}")
 
-    A_plot = np.where(
-        res["valid"],
-        res["A_pred_new"],
-        np.nan
-    )
+        A = compute_amplification(params)
 
-    axes[2].plot(
-        res["t_common_min"],
-        A_plot
-    )
+        A_all.append(A)
+        row_labels.append(rf"${SWEEP_PARAM} = {val:.0e}$")
 
-    axes[2].set_xlabel("Time (min)")
-    axes[2].set_ylabel("Predicted amplification")
-    axes[2].set_title("Normalized amplification")
-    axes[2].grid(True)
-    axes[2].set_xlim(0, 300)
-    axes[2].set_ylim(-0.01, 2)
 
-    fig.suptitle(
-        f"Predicted amplification | {RUN_NAME} | IN = {res['IN_val']} nM"
-    )
+A_stack = np.stack(A_all, axis=0)
 
-    plt.tight_layout()
-    plt.show()
+print("\nAmplification calculation complete.")
+print(f"A range: {np.nanmin(A_stack):.3g} to {np.nanmax(A_stack):.3g}")
 
 
 # ============================================================
-# 8) OVERLAY PREDICTED AMPLIFICATION
+# 4) PLOT HEATMAP + LINE PANELS
 # ============================================================
 
-plt.figure(figsize=(10, 5))
+nrows = len(A_all)
 
-for res in predicted_results:
+fig, axes = plt.subplots(
+    nrows,
+    2,
+    figsize=(16, 5 * nrows),
+    sharex="col",
+    constrained_layout=True,
+)
 
-    A_plot = np.where(
-        res["valid"],
-        res["A_pred_new"],
-        np.nan
+if nrows == 1:
+    axes = np.array([axes])
+
+T, F = np.meshgrid(t_minutes, FUELS)
+
+# ------------------------------------------------------------
+# Consistent color scale across rows
+# ------------------------------------------------------------
+A_min = np.nanmin(A_stack)
+A_max = np.nanmax(A_stack)
+
+levels = np.linspace(A_min, A_max, 20)
+
+# ------------------------------------------------------------
+# Fuel values for line plots
+# ------------------------------------------------------------
+fuel_indices = [
+    int(np.argmin(np.abs(FUELS - f)))
+    for f in FUEL_VALUES_TO_PLOT
+]
+
+CF_last = None
+
+for r, A in enumerate(A_all):
+
+    axL = axes[r, 0]
+    axR = axes[r, 1]
+
+    # --------------------------------------------------------
+    # LEFT: Heatmap
+    # --------------------------------------------------------
+    CF = axL.contourf(
+        T,
+        F,
+        A,
+        levels=levels,
+        cmap="cividis",
     )
 
-    plt.plot(
-        res["t_common_min"],
-        A_plot,
-        label=f'Input template = {res["IN_val"]} nM'
+    axL.contour(
+        T,
+        F,
+        A,
+        levels=levels,
+        colors="k",
+        linewidths=0.4,
     )
 
-plt.xlabel("Time (min)")
-plt.ylabel("Predicted amplification")
+    axL.text(
+        0.98,
+        0.95,
+        row_labels[r],
+        transform=axL.transAxes,
+        ha="right",
+        va="top",
+        fontsize=11,
+        bbox=dict(
+            facecolor="white",
+            edgecolor="none",
+            alpha=0.85,
+        ),
+    )
+
+    axL.set_ylabel("Fuel template (nM)")
+    axL.set_yticks(np.arange(0, 51, 10))
+    axL.xaxis.set_major_locator(MaxNLocator(integer=True))
+    axL.set_title("Amplification heatmap")
+
+    # --------------------------------------------------------
+    # RIGHT: Line plots
+    # --------------------------------------------------------
+
+    # Reference zero-fuel normalized baseline
+    axR.plot(
+        t_minutes,
+        np.ones_like(t_minutes),
+        linestyle="--",
+        linewidth=2.5,
+        color="black",
+        label="0 nM",
+    )
+
+    for f_val, idx in zip(FUEL_VALUES_TO_PLOT, fuel_indices):
+
+        axR.plot(
+            t_minutes,
+            A[idx, :],
+            linewidth=2,
+            label=f"{FUELS[idx]:.0f} nM",
+        )
+
+    axR.grid(True, alpha=0.3)
+    axR.yaxis.set_major_locator(MaxNLocator(integer=True))
+    axR.xaxis.set_major_locator(MaxNLocator(integer=True))
+    axR.set_ylabel("Predicted amplification")
+    axR.set_title("Selected fuel time courses")
+
+    if r == 0:
+        axR.legend(
+            title="Fuel",
+            loc="upper right",
+            fontsize=8,
+            title_fontsize=9,
+            frameon=True,
+        )
+
+    CF_last = CF
 
 
-# Build concise figure title
-title_str = (
-    f"Amplification prediction | "
-    f"Model = {MODEL_NAME} | "
-    f"Experiments fitted = {len(FIT_CONDITIONS)} | "
-    f"Held-out = {HELD_OUT_CONDITION}"
+# ============================================================
+# 5) X LABELS AND COLORBAR
+# ============================================================
+
+axes[-1, 0].set_xlabel("Time (min)")
+axes[-1, 1].set_xlabel("Time (min)")
+
+cbar = fig.colorbar(
+    CF_last,
+    ax=axes[:, 0],
+    orientation="vertical",
+    shrink=0.85,
+    pad=0.03,
+    format="%.2g",
 )
 
-plt.title(title_str)
-plt.grid(True)
-plt.legend()
-plt.xlim(0, 300)
-plt.tight_layout()
+cbar.set_label("Predicted amplification")
 
-overlay_save_file = (
-    FIGURES_DIR /
-    f"{RUN_NAME}_predicted_amplification_overlay.png"
+fig.suptitle(
+    f"Amplification prediction | {MODEL_NAME} | IN = {IN_CONC} nM",
+    fontsize=16,
 )
-
-plt.savefig(
-    overlay_save_file,
-    dpi=300,
-    bbox_inches="tight"
-)
-
-print(f"Saved figure: {overlay_save_file}")
 
 plt.show()
