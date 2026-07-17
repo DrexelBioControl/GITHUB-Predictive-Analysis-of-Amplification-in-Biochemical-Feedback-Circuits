@@ -1,0 +1,153 @@
+RUN SUMMARY
+==================================================
+
+Run name       : fit_exps12345_model0
+Model          : model0_transcriptional
+Mode           : fit
+Fit conditions : ['fig4h_0in_0fuel', 'fig4h_1p25in_0fuel', 'fig4h_2p5in_0fuel']
+Held-out       : None
+N starts       : 64
+Random seed    : 1
+Excel file     : data/in_vitro_ctRSD_modeling_data.xls
+Sheet          : All Data
+Results file   : results/Fig4H_zerofuel/fit_exps12345_model0.npz
+
+RUN SETTINGS
+--------------------------------------------------
+Cutoff method          : estimate_cutoff_index
+Cutoff fraction        : 0.98
+Cutoff hold points     : 20
+Cutoff drift tolerance : 0.03
+Manual row_end_map     : None
+
+ODE solver             : LSODA
+Relative tolerance     : 1e-6
+Absolute tolerance     : 1e-6
+
+Optimizer              : scipy.optimize.least_squares
+Initial sampling       : Sobol
+Parameter scale        : log10
+Residual normalization : max(signal) and sqrt(Npoints)
+
+FIT PARAMETERS
+--------------------------------------------------
+k_txn           = 9.94967072e-03
+ksd             = 2.89068324e-04
+kfsd            = 9.03535572e-07
+krev            = 2.73000330e-06
+kf_rep          = 2.65419409e-06
+kRz             = 3.96830175e-04
+basal_frac      = 2.66438265e-02
+
+BOUNDARY PROXIMITY CHECK
+--------------------------------------------------
+Boundary tolerance : 0.05 of log-space or linear-space range
+
+k_txn
+  Value              : 9.94967072e-03
+  Lower bound        : 9.62763757e-04
+  Upper bound        : 5.00000000e-01
+  Distance to lower  : 0.3735
+  Distance to upper  : 0.6265
+  Status             : not within 5% of bound
+
+ksd
+  Value              : 2.89068324e-04
+  Lower bound        : 1.00000000e-06
+  Upper bound        : 1.00000000e-03
+  Distance to lower  : 0.8203
+  Distance to upper  : 0.1797
+  Status             : not within 5% of bound
+
+kfsd
+  Value              : 9.03535572e-07
+  Lower bound        : 1.00000000e-07
+  Upper bound        : 1.00000000e-03
+  Distance to lower  : 0.2390
+  Distance to upper  : 0.7610
+  Status             : not within 5% of bound
+
+krev
+  Value              : 2.73000330e-06
+  Lower bound        : 1.42705205e-07
+  Upper bound        : 1.00000000e-03
+  Distance to lower  : 0.3333
+  Distance to upper  : 0.6667
+  Status             : not within 5% of bound
+
+kf_rep
+  Value              : 2.65419409e-06
+  Lower bound        : 1.00000000e-08
+  Upper bound        : 4.77116458e-05
+  Distance to lower  : 0.6589
+  Distance to upper  : 0.3411
+  Status             : not within 5% of bound
+
+kRz
+  Value              : 3.96830175e-04
+  Lower bound        : 1.00000000e-05
+  Upper bound        : 4.06799972e-01
+  Distance to lower  : 0.3468
+  Distance to upper  : 0.6532
+  Status             : not within 5% of bound
+
+basal_frac
+  Value              : 2.66438265e-02
+  Lower bound        : 1.00000000e-10
+  Upper bound        : 1.00000000e+00
+  Distance to lower  : 0.0266
+  Distance to upper  : 0.9734
+  Status             : near lower bound
+
+FIT STATISTICS
+--------------------------------------------------
+Best cost (0.5 * SSE) = 1.89390934e-02
+Best SSE (normalized) = 3.78781868e-02
+
+RMSE PER DATASET
+--------------------------------------------------
+fig4h_0in_0fuel           = 6.41545218e+01
+fig4h_1p25in_0fuel        = 3.71496845e+01
+fig4h_2p5in_0fuel         = 2.00097510e+01
+
+Held-out = None
+
+GLOBAL RMSE
+--------------------------------------------------
+Fit datasets : 3.45727138e-03
+All datasets : 3.45727138e-03
+
+DATASET WINDOWS
+--------------------------------------------------
+fig4h_0in_0fuel
+  Type        : fitted
+  IN          : 0 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 1281.50 min
+  n_fit       : 1673
+  n_excluded  : 834
+
+fig4h_1p25in_0fuel
+  Type        : fitted
+  IN          : 1.25 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 797.92 min
+  n_fit       : 1042
+  n_excluded  : 1465
+
+fig4h_2p5in_0fuel
+  Type        : fitted
+  IN          : 2.5 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 347.30 min
+  n_fit       : 454
+  n_excluded  : 2053
+
+No held-out dataset because all conditions were fitted.
+

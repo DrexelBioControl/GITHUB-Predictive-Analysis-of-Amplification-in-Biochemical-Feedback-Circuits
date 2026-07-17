@@ -1,0 +1,79 @@
+{
+  "excel_file": "data/in_vitro_ctRSD_modeling_data.xls",
+  "excel_sheet": "Fig. 4H (SciAdv) fuel",
+  "fit_params": [
+    "k_txn",
+    "ksd",
+    "kfsd",
+    "krev",
+    "kf_rep",
+    "kRz",
+    "basal_frac"
+  ],
+  "all_param_central": {
+    "k_txn": 0.00962763757,
+    "ksd": 1e-04,
+    "kfsd": 1e-04,
+    "krev": 1.42705205e-06,
+    "kf_rep": 4.77116458e-06,
+    "kRz": 0.0406799972,
+    "basal_frac": 0.0220510273
+  },
+  "n_starts": 50,
+  "random_seed": 1,
+  "custom_param_bounds": {
+    "k_txn": [
+      0.000962763757,
+      0.0962763757
+    ],
+    "ksd": [
+      1e-05,
+      1e-03
+    ],
+    "kfsd": [
+      1e-05,
+      1e-03
+    ],
+    "krev": [
+      1.42705205e-07,
+      1.42705205e-05
+    ],
+    "kf_rep": [
+      4.77116458e-07,
+      4.77116458e-05
+    ],
+    "kRz": [
+      0.00406799972,
+      0.406799972
+    ],
+    "basal_frac": [
+      0.00220510273,
+      2.20510273
+    ]
+  },
+  "row_end_map": {
+    "1": 1309,
+    "2": 526,
+    "3": 787,
+    "4": 265,
+    "5": 200
+  },
+  "results_dir": "results/Fig4H",
+  "figures_dir": "figures/Fig4H",
+  "run_name": "fit_exps1234_model0",
+  "all_conditions": [
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel",
+    "fig4h_2p5in_25fuel"
+  ],
+  "fit_conditions": [
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel"
+  ],
+  "fit_results_file": "fit_exps1234_model0.npz",
+  "model_name": "model0_transcriptional"
+}

@@ -28,15 +28,13 @@ output_index = ROL_INDEX
 
 def initial_conditions(d, params):
 
-    DRL_0 = d["DRL_0"]
-
     return [
         0,          # fRSDg
         0,          # uRSDg
         0,          # RSDg
         0,          # IN
         0,          # OUT
-        DRL_0,      # DRL
+        500,        # DRL
         0,          # ROL
         0,          # I_RSDg
         0,          # F
@@ -56,6 +54,9 @@ def rhs(t, x, RSD_temp, IN_temp, F_temp, params):
     kfld = params["kfld"]
     klk = params["klk"]
     basal_frac = params["basal_frac"]
+   
+    # Constrain reverse strand displacement between F_RSDg and IN to equal forward strand displacement
+    kback = ksd
 
     # Unpack state variables
     fRSDg  = x[0]
@@ -78,7 +79,7 @@ def rhs(t, x, RSD_temp, IN_temp, F_temp, params):
     dDRL    = -kf_rep*OUT*DRL
     dROL    =  kf_rep*OUT*DRL
     dI_RSDg = ksd*RSDg*IN - krev*I_RSDg*OUT - kfsd*I_RSDg*F
-    dF      = k_txn*F_temp - kfsd*I_RSDg*F + ksd*F_RSDg*IN - klk*fRSDg*F
-    dF_RSDg = kfsd*I_RSDg*F - ksd*F_RSDg*IN + klk*fRSDg*F
+    dF      = k_txn*F_temp - kfsd*I_RSDg*F + kback*F_RSDg*IN - klk*fRSDg*F
+    dF_RSDg = kfsd*I_RSDg*F - kback*F_RSDg*IN + klk*fRSDg*F
 
     return [dfRSDg, duRSDg, dRSDg, dIN, dOUT, dDRL, dROL, dI_RSDg, dF, dF_RSDg]

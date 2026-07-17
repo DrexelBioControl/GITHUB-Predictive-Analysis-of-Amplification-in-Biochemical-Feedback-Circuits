@@ -27,7 +27,7 @@ from model_registry import get_model
 # ------------------------------------------------------------
 # Choose fitted model/config here
 # ------------------------------------------------------------
-CONFIG_FILE = BASE_DIR / "configs" / "fit_exps12345_model2.json"
+CONFIG_FILE = BASE_DIR / "configs" / "Fig4H" / "fit_exps12345_model2.json"
 
 # ------------------------------------------------------------
 # Choose input concentration for ON condition
@@ -41,7 +41,7 @@ IN_OFF = 0.0
 FUELS = np.linspace(0.0, 50.0, 51)
 
 # Fuel values to plot as line plots
-FUEL_VALUES_TO_PLOT = [25]
+FUEL_VALUES_TO_PLOT = [10,30,50]
 
 # ------------------------------------------------------------
 # Time grid for prediction
@@ -51,11 +51,6 @@ N_TIMEPOINTS = 1000
 
 t_eval_sec = np.linspace(0.0, T_END_MIN * 60.0, N_TIMEPOINTS)
 t_minutes = t_eval_sec / 60.0
-
-# ------------------------------------------------------------
-# Reporter amount used for prediction
-# ------------------------------------------------------------
-REPORTER_0 = 500.0
 
 # ------------------------------------------------------------
 # Rate floor for stable amplification ratios
@@ -69,8 +64,8 @@ RATE_FLOOR = 1e-8
 # For model1_activegate_fuel, use "klkg"
 # For model0_transcriptional, use "basal_frac" or set to None
 # ------------------------------------------------------------
-SWEEP_PARAM = None
-SWEEP_VALUES = [1e-7, 1e-5, 1e-3]
+SWEEP_PARAM = "klk"
+SWEEP_VALUES = np.logspace(np.log10(5.53859876e-05), np.log10(5.53859876e-03), 3)
 
 # If you only want one row using the best-fit parameter value:
 # SWEEP_PARAM = None
@@ -160,10 +155,8 @@ for p, v in base_params.items():
 # 2) SIMULATION HELPERS
 # ============================================================
 
-def make_dataset(IN_value, Fuel_value, DRL_0=REPORTER_0):
-    """
-    Minimal dataset dictionary expected by model.initial_conditions().
-    """
+# Minimal dataset dictionary expected by model.initial_conditions()
+def make_dataset(IN_value, Fuel_value):
 
     return {
         "name": f"IN_{IN_value}_Fuel_{Fuel_value}",
@@ -171,17 +164,14 @@ def make_dataset(IN_value, Fuel_value, DRL_0=REPORTER_0):
         "x_exp": np.zeros_like(t_minutes),
         "IN_conc": float(IN_value),
         "Fuel_conc": float(Fuel_value),
-        "DRL_0": float(DRL_0),
         "RSD_temp": 25.0,
     }
 
 
-def simulate_ROL_and_rate(IN_value, Fuel_value, params, DRL_0=REPORTER_0):
-    """
-    Simulate model and extract ROL and dROL/dt directly from the ODE.
-    """
+# Simulate model and extract ROL and dROL/dt directly from the ODE
+def simulate_ROL_and_rate(IN_value, Fuel_value, params):
 
-    d = make_dataset(IN_value, Fuel_value, DRL_0=DRL_0)
+    d = make_dataset(IN_value, Fuel_value)
 
     y0 = model.initial_conditions(d, params)
 
@@ -233,25 +223,14 @@ def compute_amplification(params):
 
         A(t,f) = A0(t,f) / A0(t,0)
 
-               = [v_ON(t,f) * v_OFF(t,0)]
-                 -------------------------
+                 [v_ON(t,f) * v_OFF(t,0)]
+               = -------------------------
                  [v_OFF(t,f) * v_ON(t,0)]
     """
 
     # Zero-fuel baseline
-    _, v_on_0 = simulate_ROL_and_rate(
-        IN_CONC,
-        0.0,
-        params,
-        DRL_0=REPORTER_0,
-    )
-
-    _, v_off_0 = simulate_ROL_and_rate(
-        IN_OFF,
-        0.0,
-        params,
-        DRL_0=REPORTER_0,
-    )
+    _, v_on_0  = simulate_ROL_and_rate(IN_CONC, 0.0, params)
+    _, v_off_0 = simulate_ROL_and_rate(IN_OFF, 0.0, params)
 
     A = np.full(
         (len(FUELS), len(t_eval_sec)),
@@ -259,21 +238,11 @@ def compute_amplification(params):
         dtype=float,
     )
 
+    # Compute amplification for each fuel value
     for i, fuel in enumerate(FUELS):
 
-        _, v_on_f = simulate_ROL_and_rate(
-            IN_CONC,
-            fuel,
-            params,
-            DRL_0=REPORTER_0,
-        )
-
-        _, v_off_f = simulate_ROL_and_rate(
-            IN_OFF,
-            fuel,
-            params,
-            DRL_0=REPORTER_0,
-        )
+        _, v_on_f  = simulate_ROL_and_rate(IN_CONC, fuel, params)
+        _, v_off_f = simulate_ROL_and_rate(IN_OFF, fuel, params)
 
         valid = (
             (np.abs(v_on_f) >= RATE_FLOOR) &
@@ -469,8 +438,6 @@ cbar = fig.colorbar(
     pad=0.03,
     format="%.2g",
 )
-
-cbar.set_label("Predicted amplification")
 
 fig.suptitle(
     f"Amplification prediction | {MODEL_NAME} | IN = {IN_CONC} nM",

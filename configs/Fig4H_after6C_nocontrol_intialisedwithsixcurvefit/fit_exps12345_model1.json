@@ -1,0 +1,61 @@
+{
+  "excel_file": "data/in_vitro_ctRSD_modeling_data.xls",
+  "excel_sheet": "All Data",
+  "fit_params": [
+    "k_txn",
+    "ksd",
+    "kfsd",
+    "krev",
+    "kf_rep",
+    "kRz",
+    "basal_frac",
+    "klkg"
+  ],
+  "all_param_central": {
+    "k_txn": 8.27651958e-03,
+    "ksd": 3.69700150e-06,
+    "kfsd": 4.15285161e-05,
+    "krev": 4.20266884e-07,
+    "kf_rep": 1.59141989e-05,
+    "kRz": 1.79290300e-03,
+    "basal_frac": 3.07820925e-02,
+
+    "klkg": 5.21458921e-09
+  },
+  "n_starts": 50,
+  "random_seed": 1,
+  "custom_param_bounds": {
+    "k_txn": [2.75884E-03, 2.48296E-02],
+    "ksd": [1.23233E-06, 1.10910E-05],
+    "kfsd": [1.38428E-05, 1.24586E-04],
+    "krev": [1.40089E-07, 1.26080E-06],
+    "kf_rep": [5.30473E-06, 4.77426E-05],
+    "kRz": [5.97634E-04, 5.37871E-03],
+    "basal_frac": [1e-10,1],
+    
+    "klkg": [1.73820E-09, 1.56438E-08]
+  },
+  "cutoff_frac": 0.98,
+  "cutoff_hold_points": 20,
+  "cutoff_drift_tol": 0.03,
+  "row_end_map": null,
+  "results_dir": "results/Fig4H_after6C_nocontrol_intialisedwithsixcurvefit",
+  "figures_dir": "figures/Fig4H_after6C_nocontrol_intialisedwithsixcurvefit",
+  "run_name": "fit_exps12345_model1",
+  "all_conditions": [
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel",
+    "fig4h_2p5in_25fuel"
+  ],
+  "fit_conditions": [
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel",
+    "fig4h_2p5in_25fuel"
+  ],
+  "fit_results_file": "fit_exps12345_model1.npz",
+  "model_name": "model1_activegate_fuel"
+}

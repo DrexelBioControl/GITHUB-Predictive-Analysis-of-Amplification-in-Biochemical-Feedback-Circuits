@@ -1,0 +1,204 @@
+RUN SUMMARY
+==================================================
+
+Run name       : fit_exps12345_model2
+Model          : model2_inactivegate_fuel
+Mode           : fit
+Fit conditions : ['fig2d_50nM_I0', 'fig2d_50nM_I1', 'fig2d_25nM_I1', 'fig2d_12p5nM_I1', 'fig2d_6p25nM_I1', 'fig2d_2p5nM_I1']
+Held-out       : None
+N starts       : 64
+Random seed    : 1
+Excel file     : data/in_vitro_ctRSD_modeling_data.xls
+Sheet          : All Data
+Results file   : results/Fig2D/fit_exps12345_model2.npz
+
+RUN SETTINGS
+--------------------------------------------------
+Cutoff method          : estimate_cutoff_index
+Cutoff fraction        : 0.98
+Cutoff hold points     : 20
+Cutoff drift tolerance : 0.03
+Manual row_end_map     : None
+
+ODE solver             : LSODA
+Relative tolerance     : 1e-6
+Absolute tolerance     : 1e-6
+
+Optimizer              : scipy.optimize.least_squares
+Initial sampling       : Sobol
+Parameter scale        : log10
+Residual normalization : max(signal) and sqrt(Npoints)
+
+FIT PARAMETERS
+--------------------------------------------------
+k_txn           = 1.17387278e-02
+ksd             = 2.40369180e-06
+kfsd            = 1.33744028e-06
+krev            = 1.42633484e-05
+kf_rep          = 1.72319040e-05
+kRz             = 3.43439068e-03
+kfld            = 3.69507487e-03
+klk             = 7.19748224e-05
+basal_frac      = 3.08220854e-02
+
+BOUNDARY PROXIMITY CHECK
+--------------------------------------------------
+Boundary tolerance : 0.05 of log-space or linear-space range
+
+k_txn
+  Value              : 1.17387278e-02
+  Lower bound        : 1.00000000e-03
+  Upper bound        : 5.00000000e-01
+  Distance to lower  : 0.3963
+  Distance to upper  : 0.6037
+  Status             : not within 5% of bound
+
+ksd
+  Value              : 2.40369180e-06
+  Lower bound        : 9.97801643e-07
+  Upper bound        : 9.97801643e-05
+  Distance to lower  : 0.1909
+  Distance to upper  : 0.8091
+  Status             : not within 5% of bound
+
+kfsd
+  Value              : 1.33744028e-06
+  Lower bound        : 2.29972555e-07
+  Upper bound        : 2.29972555e-05
+  Distance to lower  : 0.3823
+  Distance to upper  : 0.6177
+  Status             : not within 5% of bound
+
+krev
+  Value              : 1.42633484e-05
+  Lower bound        : 1.42705205e-07
+  Upper bound        : 1.42705205e-05
+  Distance to lower  : 0.9999
+  Distance to upper  : 0.0001
+  Status             : near upper bound
+
+kf_rep
+  Value              : 1.72319040e-05
+  Lower bound        : 1.00000000e-08
+  Upper bound        : 1.00000000e-04
+  Distance to lower  : 0.8091
+  Distance to upper  : 0.1909
+  Status             : not within 5% of bound
+
+kRz
+  Value              : 3.43439068e-03
+  Lower bound        : 1.00000000e-05
+  Upper bound        : 1.00000000e-01
+  Distance to lower  : 0.6340
+  Distance to upper  : 0.3660
+  Status             : not within 5% of bound
+
+kfld
+  Value              : 3.69507487e-03
+  Lower bound        : 1.00000000e-04
+  Upper bound        : 1.00000000e-01
+  Distance to lower  : 0.5225
+  Distance to upper  : 0.4775
+  Status             : not within 5% of bound
+
+klk
+  Value              : 7.19748224e-05
+  Lower bound        : 6.98976431e-06
+  Upper bound        : 1.00000000e-02
+  Distance to lower  : 0.3209
+  Distance to upper  : 0.6791
+  Status             : not within 5% of bound
+
+basal_frac
+  Value              : 3.08220854e-02
+  Lower bound        : 1.00000000e-10
+  Upper bound        : 1.00000000e+00
+  Distance to lower  : 0.0308
+  Distance to upper  : 0.9692
+  Status             : near lower bound
+
+FIT STATISTICS
+--------------------------------------------------
+Best cost (0.5 * SSE) = 8.41927206e-03
+Best SSE (normalized) = 1.68385441e-02
+
+RMSE PER DATASET
+--------------------------------------------------
+fig2d_50nM_I0             = 1.58399125e+01
+fig2d_50nM_I1             = 2.18329412e+01
+fig2d_25nM_I1             = 1.95596211e+01
+fig2d_12p5nM_I1           = 2.01273732e+01
+fig2d_6p25nM_I1           = 1.59111756e+01
+fig2d_2p5nM_I1            = 1.67329878e+01
+
+Held-out = None
+
+GLOBAL RMSE
+--------------------------------------------------
+Fit datasets : 2.83301926e-03
+All datasets : 2.83301926e-03
+
+DATASET WINDOWS
+--------------------------------------------------
+fig2d_50nM_I0
+  Type        : fitted
+  IN          : 0 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 345.00 min
+  n_fit       : 451
+  n_excluded  : 0
+
+fig2d_50nM_I1
+  Type        : fitted
+  IN          : 50 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 230.00 min
+  n_fit       : 301
+  n_excluded  : 150
+
+fig2d_25nM_I1
+  Type        : fitted
+  IN          : 25 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 230.77 min
+  n_fit       : 302
+  n_excluded  : 149
+
+fig2d_12p5nM_I1
+  Type        : fitted
+  IN          : 12.5 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 237.67 min
+  n_fit       : 311
+  n_excluded  : 140
+
+fig2d_6p25nM_I1
+  Type        : fitted
+  IN          : 6.25 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 266.03 min
+  n_fit       : 348
+  n_excluded  : 101
+
+fig2d_2p5nM_I1
+  Type        : fitted
+  IN          : 2.5 nM
+  Fuel        : 0 nM
+  Gate        : 25 nM
+  t_start     : 0.00 min
+  t_end       : 294.40 min
+  n_fit       : 385
+  n_excluded  : 64
+
+No held-out dataset because all conditions were fitted.
+
