@@ -1,0 +1,69 @@
+{
+  "excel_file": "data/in_vitro_ctRSD_modeling_data.xls",
+  "excel_sheet": "All Data",
+  "fit_params": [
+    "k_txn",
+    "ksd",
+    "kfsd",
+    "krev",
+    "kf_rep",
+    "kRz",
+    "basal_frac",
+    "misfold_frac",
+    "kmG_F"
+  ],
+
+  "all_param_central": {
+    "k_txn": 1.73358974e-02,
+    "ksd": 2.72409176e-06,
+    "kfsd": 1.24585483e-04,
+    "krev": 1.42705205e-07,
+    "kf_rep": 4.77116349e-05,
+    "kRz": 5.97698320e-04,
+    "basal_frac": 3.77504457e-02,
+
+    "misfold_frac": 9.31433E-01,
+    "kmG_F": 1.63037E-05
+  },
+
+  "n_starts": 50,
+  "random_seed": 1,
+
+  "custom_param_bounds": {
+    "k_txn": [5.77863E-03,5.20077E-02],
+    "ksd": [9.08031E-07,8.17228E-06],
+    "kfsd": [4.15285E-05,3.73756E-04],
+    "krev": [4.75684E-08,4.28116E-07],
+    "kf_rep": [1.59039E-05,1.43135E-04],
+    "kRz": [1.99233E-04,1.79309E-03],
+    "basal_frac": [0.0125834819,0.1132513371],
+    
+    "misfold_frac": [1e-10,1],
+    "kmG_F": [1.63037E-08,1.63037E-02]
+  },
+  "cutoff_frac": 0.98,
+  "cutoff_hold_points": 20,
+  "cutoff_drift_tol": 0.03,
+  "row_end_map": null,
+  "results_dir": "results/Fig4H_after6C_editedfracparam",
+  "figures_dir": "figures/Fig4H_after6C_editedfracparam",
+  "run_name": "predict4Hexp0_model3",
+  "all_conditions": [
+    "fig4h_0in_0fuel",
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel",
+    "fig4h_2p5in_25fuel"
+  ],
+  "fit_conditions": [
+    "fig4h_1p25in_0fuel",
+    "fig4h_2p5in_0fuel",
+    "fig4h_0in_25fuel",
+    "fig4h_1p25in_25fuel",
+    "fig4h_2p5in_25fuel"
+  ],
+
+  "fit_results_file": "predict4Hexp0_model3.npz",
+  "model_name": "model3_misfoldgate_fuel"
+}

@@ -1,0 +1,3 @@
+model,model_file,number_of_fitted_parameters,best_cost,global_normalized_rmse,optimizer_success,rank,selected
+Figure2D_base_model_decay,Figure2D_base_model_decay.xml,5,0.22209462868389257,0.017442454453866156,True,1,True
+Figure2D_base_model,Figure2D_base_model.xml,5,0.22229576244481336,0.017450350800917634,True,2,False

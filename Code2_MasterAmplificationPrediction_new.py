@@ -32,7 +32,7 @@ CONFIG_FILE = BASE_DIR / "configs" / "Fig4H_after6C_editedfracparam" / "fit_exps
 # ------------------------------------------------------------
 # Choose input concentration for ON condition
 # ------------------------------------------------------------
-IN_CONC = 1.25
+IN_CONC = 2.5
 IN_OFF = 0.0
 
 # ------------------------------------------------------------
@@ -41,7 +41,7 @@ IN_OFF = 0.0
 FUELS = np.linspace(0.0, 50.0, 51)
 
 # Fuel values to plot as line plots
-FUEL_VALUES_TO_PLOT = [10,30,50]
+FUEL_VALUES_TO_PLOT = [1,3,5,10,30,50]
 
 # ------------------------------------------------------------
 # Time grid for prediction
@@ -301,93 +301,75 @@ print(f"A range: {np.nanmin(A_stack):.3g} to {np.nanmax(A_stack):.3g}")
 
 
 # ============================================================
-# 4) PLOT HEATMAP + LINE PANELS
+# 4) PLOT HORIZONTAL LINE PANELS WITH A SHARED Y AXIS
 # ============================================================
 
-nrows = len(A_all)
+ncols = len(A_all)
 
 fig, axes = plt.subplots(
-    nrows,
-    2,
-    figsize=(16, 5 * nrows),
-    sharex="col",
+    1,
+    ncols,
+    figsize=(5.2 * ncols, 4.8),
+    sharex=True,
+    sharey=True,
     constrained_layout=True,
 )
 
-if nrows == 1:
+# Ensure axes is always a one-dimensional NumPy array,
+# including when only one parameter value is plotted.
+if ncols == 1:
     axes = np.array([axes])
 
-T, F = np.meshgrid(t_minutes, FUELS)
-
 # ------------------------------------------------------------
-# Consistent color scale across rows
-# ------------------------------------------------------------
-A_min = np.nanmin(A_stack)
-A_max = np.nanmax(A_stack)
-
-levels = np.linspace(A_min, A_max, 20)
-
-# ------------------------------------------------------------
-# Fuel values for line plots
+# Locate the closest simulated fuel concentration corresponding
+# to each requested line-plot fuel concentration.
 # ------------------------------------------------------------
 fuel_indices = [
-    int(np.argmin(np.abs(FUELS - f)))
-    for f in FUEL_VALUES_TO_PLOT
+    int(np.argmin(np.abs(FUELS - fuel_value)))
+    for fuel_value in FUEL_VALUES_TO_PLOT
 ]
 
-CF_last = None
+# ------------------------------------------------------------
+# Calculate one common y-axis range using only the curves that
+# will actually appear in the line panels.
+# ------------------------------------------------------------
+selected_line_values = []
 
-for r, A in enumerate(A_all):
+for A in A_all:
+    for idx in fuel_indices:
+        selected_line_values.append(A[idx, :])
 
-    axL = axes[r, 0]
-    axR = axes[r, 1]
+selected_line_values = np.concatenate(selected_line_values)
+finite_line_values = selected_line_values[
+    np.isfinite(selected_line_values)
+]
 
-    # --------------------------------------------------------
-    # LEFT: Heatmap
-    # --------------------------------------------------------
-    CF = axL.contourf(
-        T,
-        F,
-        A,
-        levels=levels,
-        cmap="cividis",
+if finite_line_values.size == 0:
+    raise RuntimeError(
+        "No finite amplification values were available for plotting. "
+        "Check RATE_FLOOR and the simulated production rates."
     )
 
-    axL.contour(
-        T,
-        F,
-        A,
-        levels=levels,
-        colors="k",
-        linewidths=0.4,
-    )
+y_min = min(0.0, float(np.nanmin(finite_line_values)))
+y_max = max(1.0, float(np.nanmax(finite_line_values)))
 
-    axL.text(
-        0.98,
-        0.95,
-        row_labels[r],
-        transform=axL.transAxes,
-        ha="right",
-        va="top",
-        fontsize=11,
-        bbox=dict(
-            facecolor="white",
-            edgecolor="none",
-            alpha=0.85,
-        ),
-    )
+y_range = y_max - y_min
+if y_range == 0:
+    y_range = 1.0
 
-    axL.set_ylabel("Fuel template (nM)")
-    axL.set_yticks(np.arange(0, 51, 10))
-    axL.xaxis.set_major_locator(MaxNLocator(integer=True))
-    axL.set_title("Amplification heatmap")
+y_padding = 0.05 * y_range
+shared_ylim = (
+    y_min - y_padding,
+    y_max + y_padding,
+)
 
-    # --------------------------------------------------------
-    # RIGHT: Line plots
-    # --------------------------------------------------------
+# ------------------------------------------------------------
+# Plot one panel for each swept leak-parameter value.
+# ------------------------------------------------------------
+for panel_index, (A, ax) in enumerate(zip(A_all, axes)):
 
-    # Reference zero-fuel normalized baseline
-    axR.plot(
+    # Zero-fuel normalized reference.
+    ax.plot(
         t_minutes,
         np.ones_like(t_minutes),
         linestyle="--",
@@ -396,52 +378,65 @@ for r, A in enumerate(A_all):
         label="0 nM",
     )
 
-    for f_val, idx in zip(FUEL_VALUES_TO_PLOT, fuel_indices):
-
-        axR.plot(
+    # Selected nonzero fuel conditions.
+    for idx in fuel_indices:
+        ax.plot(
             t_minutes,
             A[idx, :],
-            linewidth=2,
+            linewidth=2.0,
             label=f"{FUELS[idx]:.0f} nM",
         )
 
-    axR.grid(True, alpha=0.3)
-    axR.yaxis.set_major_locator(MaxNLocator(integer=True))
-    axR.xaxis.set_major_locator(MaxNLocator(integer=True))
-    axR.set_ylabel("Predicted amplification")
-    axR.set_title("Selected fuel time courses")
+    ax.set_title(
+        row_labels[panel_index],
+        fontsize=12,
+    )
 
-    if r == 0:
-        axR.legend(
-            title="Fuel",
-            loc="upper right",
-            fontsize=8,
-            title_fontsize=9,
-            frameon=True,
-        )
+    ax.set_xlabel("Time (min)")
+    ax.set_xlim(0, T_END_MIN)
 
-    CF_last = CF
+    # Fixed shared y-axis from 0 to 6
+    ax.set_ylim(-0.05, 4.5)
+    ax.set_yticks(np.arange(0, 5, 1))
 
+    ax.grid(
+        True,
+        alpha=0.3,
+    )
 
-# ============================================================
-# 5) X LABELS AND COLORBAR
-# ============================================================
+    ax.xaxis.set_major_locator(
+        MaxNLocator(integer=True)
+    )
 
-axes[-1, 0].set_xlabel("Time (min)")
-axes[-1, 1].set_xlabel("Time (min)")
+# A shared y axis means only the first panel needs the label.
+axes[0].set_ylabel("Predicted amplification")
 
-cbar = fig.colorbar(
-    CF_last,
-    ax=axes[:, 0],
-    orientation="vertical",
-    shrink=0.85,
-    pad=0.03,
-    format="%.2g",
+# Show a single legend for the full panel set.
+axes[-1].legend(
+    title="Fuel",
+    loc="upper right",
+    fontsize=9,
+    title_fontsize=10,
+    frameon=True,
 )
 
 fig.suptitle(
     f"Amplification prediction | {MODEL_NAME} | IN = {IN_CONC} nM",
     fontsize=16,
 )
+
+# Optional high-resolution export for PowerPoint.
+OUTPUT_FILE = BASE_DIR / (
+    f"amplification_timecourses_{MODEL_NAME}_"
+    f"IN_{IN_CONC:g}nM.png"
+)
+
+fig.savefig(
+    OUTPUT_FILE,
+    dpi=400,
+    bbox_inches="tight",
+)
+
+print(f"Saved figure: {OUTPUT_FILE}")
 
 plt.show()

@@ -1,0 +1,7 @@
+parameter,value,fitted
+ktx__,0.019072538201002232,True
+kmat__,0.004629595756873021,True
+kx__,1.151426999095473e-06,True
+krev__,8.099999990292164e-07,True
+krep__,3.3333552437352162e-06,True
+k_test_decay,0.0001,False

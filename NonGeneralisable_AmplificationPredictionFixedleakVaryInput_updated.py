@@ -56,26 +56,100 @@ ALL_PARAM_INFO = {
     for p, v in config["all_param_central"].items()
 }
 
+# ------------------------------------------------------------
+# Load optional manually specified plateau-start rows
+#
+# Some configuration files store row_end_map as null because
+# no condition-specific plateau cutoff rows were supplied.
+# In that case, use an empty dictionary so the code can fall
+# back to estimating the plateau from the final 20% of the trace.
+# ------------------------------------------------------------
+
+row_end_map_config = config.get("row_end_map") or {}
+
 row_end_map = {
-    int(k): int(v)
-    for k, v in config["row_end_map"].items()
+    int(column_index): int(row_end)
+    for column_index, row_end in row_end_map_config.items()
 }
+
+if len(row_end_map) == 0:
+    print(
+        "No row_end_map was provided. "
+        "The final 20% of each trace will be used to estimate DRL_0."
+    )
 
 EXCEL_FILE = BASE_DIR / config.get(
     "excel_file",
     "data/in_vitro_ctRSD_modeling_data.xls"
 )
 
-EXCEL_SHEET = config.get(
-    "excel_sheet",
-    "Fig. 4H (SciAdv) fuel"
+# ------------------------------------------------------------
+# Excel worksheet used by this non-generalisable script
+#
+# This script was written specifically for the original Figure 4H
+# worksheet layout, so override the worksheet name stored in the
+# JSON configuration.
+# ------------------------------------------------------------
+
+EXCEL_SHEET = "Fig. 4H (SciAdv) fuel"
+
+# ------------------------------------------------------------
+# Locate saved fitting results
+#
+# Read both the result folder and the exact .npz filename from
+# the JSON configuration. This avoids assuming that the saved
+# result must follow the older "{RUN_NAME}_results.npz" format.
+# ------------------------------------------------------------
+
+RESULTS_DIR = BASE_DIR / config.get(
+    "results_dir",
+    "results"
 )
 
-RESULTS_DIR = BASE_DIR / config.get("results_dir", "results")
-FIT_RESULTS_FILE = RESULTS_DIR / f"{RUN_NAME}_results.npz"
+FIT_RESULTS_FILENAME = config.get(
+    "fit_results_file",
+    f"{RUN_NAME}_results.npz"
+)
 
-FIGURES_DIR = BASE_DIR / "figures"
-FIGURES_DIR.mkdir(exist_ok=True)
+FIT_RESULTS_FILE = RESULTS_DIR / FIT_RESULTS_FILENAME
+
+
+# ------------------------------------------------------------
+# Check that the saved fitting-result file exists
+#
+# Stop here with a clear error message rather than allowing
+# np.load() to fail later with a less informative traceback.
+# ------------------------------------------------------------
+
+if not FIT_RESULTS_FILE.exists():
+
+    raise FileNotFoundError(
+        "\nCould not find the saved fitting-result file.\n\n"
+        f"Expected file:\n"
+        f"    {FIT_RESULTS_FILE}\n\n"
+        "Check that:\n"
+        "1. The fitting run has already been completed.\n"
+        "2. The .npz file is inside the configured results folder.\n"
+        "3. fit_results_file in the JSON matches the actual filename.\n"
+    )
+
+
+# ------------------------------------------------------------
+# Create figure-output folder
+#
+# Use the configured figures_dir when one is supplied. Otherwise,
+# fall back to the general figures folder.
+# ------------------------------------------------------------
+
+FIGURES_DIR = BASE_DIR / config.get(
+    "figures_dir",
+    "figures"
+)
+
+FIGURES_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
 
 
 # ============================================================
@@ -154,24 +228,65 @@ def build_full_dataset(cond):
     # Look up column index and experimental concentrations
     col_idx, IN_conc, Fuel_conc = CONDITIONS[cond]
 
-    # Lists for full experimental timecourse
+    # Lists for the full experimental timecourse
     t = []
     x = []
 
-    # Load full trajectory from Excel
+
+    # ------------------------------------------------------------
+    # Load numerical trajectory from Excel
+    #
+    # The "All Data" worksheet can contain headings, labels, and
+    # blank cells in addition to the numerical timecourse.
+    #
+    # Only retain rows in which both the time cell and the signal
+    # cell contain numerical values. This prevents text values from
+    # being converted into a string array by NumPy.
+    # ------------------------------------------------------------
+
     for r in range(3, ws.nrows):
 
-        # Time is always stored in Excel column 0
-        t.append(ws.cell_value(r, 0))
+        # Time is stored in Excel column 0
+        time_value = ws.cell_value(r, 0)
 
         # Signal column is shifted by one because time uses column 0
-        x.append(ws.cell_value(r, col_idx + 1))
+        signal_value = ws.cell_value(r, col_idx + 1)
 
-    # Convert time to numpy array
-    t = np.array(t)
+        # Skip headings, labels, blanks, and other non-numerical rows
+        if not isinstance(time_value, (int, float)):
+            continue
+
+        if not isinstance(signal_value, (int, float)):
+            continue
+
+        # Store numerical values explicitly as floats
+        t.append(float(time_value))
+        x.append(float(signal_value))
+
+
+    # ------------------------------------------------------------
+    # Check that numerical data were found
+    # ------------------------------------------------------------
+
+    if len(t) == 0:
+
+        raise ValueError(
+            f"No numerical data were found for condition '{cond}'. "
+            f"Check EXCEL_SHEET and the column mapping in CONDITIONS."
+        )
+
+
+    # Convert time to a numerical NumPy array
+    t = np.asarray(
+        t,
+        dtype=float
+    )
 
     # Convert fraction reacted to nM reacted
-    x = np.array(x) * 500.0
+    x = np.asarray(
+        x,
+        dtype=float
+    ) * 500.0
 
     # Use configured plateau cutoff if available
     if col_idx in row_end_map:
@@ -183,18 +298,48 @@ def build_full_dataset(cond):
 
         row_end = int(0.8 * ws.nrows)
 
-    # Store plateau-region signal values
+    # Store numerical plateau-region signal values
     x_plateau = []
 
+
+    # ------------------------------------------------------------
     # Read plateau region for reporter estimate
+    #
+    # As above, ignore blank cells and text labels so that only
+    # numerical signal values are used to estimate DRL_0.
+    # ------------------------------------------------------------
+
     for r in range(row_end, ws.nrows):
-        x_plateau.append(ws.cell_value(r, col_idx + 1))
+
+        signal_value = ws.cell_value(
+            r,
+            col_idx + 1
+        )
+
+        if not isinstance(signal_value, (int, float)):
+            continue
+
+        x_plateau.append(
+            float(signal_value)
+        )
+
 
     # Convert plateau signal to nM
-    x_plateau = np.array(x_plateau) * 500.0
+    x_plateau = np.asarray(
+        x_plateau,
+        dtype=float
+    ) * 500.0
 
-    # Estimate initial reporter pool from plateau
-    DRL_0 = np.mean(x_plateau) if len(x_plateau) > 0 else x[-1]
+
+    # Estimate initial reporter pool from the plateau.
+    #
+    # If no numerical plateau values remain after filtering,
+    # use the final numerical point in the full trajectory.
+    DRL_0 = (
+        float(np.mean(x_plateau))
+        if len(x_plateau) > 0
+        else float(x[-1])
+    )
 
     # Return dataset in same format expected by model.initial_conditions()
     return {
@@ -213,6 +358,18 @@ FULL_DATASETS = {
     cond: build_full_dataset(cond)
     for cond in CONDITIONS
 }
+
+
+# Print the number of numerical data points loaded for each condition
+print("\nNumerical experimental data loaded:")
+
+for cond, dataset in FULL_DATASETS.items():
+
+    print(
+        f"{cond:<18} : "
+        f"{len(dataset['t_exp'])} points, "
+        f"DRL_0 = {dataset['DRL_0']:.3f} nM"
+    )
 
 
 def get_full_dataset_by_condition(IN_conc, Fuel_conc):
@@ -490,6 +647,7 @@ plt.title(title_str)
 plt.grid(True)
 plt.legend()
 plt.xlim(0, 300)
+plt.ylim(-0.01, 2)
 plt.tight_layout()
 
 overlay_save_file = (

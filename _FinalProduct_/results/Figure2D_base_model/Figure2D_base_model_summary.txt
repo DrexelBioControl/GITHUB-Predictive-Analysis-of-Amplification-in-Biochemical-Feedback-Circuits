@@ -1,0 +1,45 @@
+RUN SUMMARY
+============================================================
+
+Run name       : Figure2D_compare_all_SBML_models
+Model          : Figure2D_base_model
+SBML file      : C:\Users\namhn\Documents\_DrexelNist_\_FinalProduct_\models\Figure2D_base_model.xml
+Mode           : fit
+Fit conditions : ['fig2d_50nM_I0', 'fig2d_50nM_I1', 'fig2d_25nM_I1', 'fig2d_12p5nM_I1', 'fig2d_6p25nM_I1', 'fig2d_2p5nM_I1']
+Fit parameters : ['ktx__', 'kmat__', 'kx__', 'krev__', 'krep__']
+N starts       : 8
+Random seed    : 20260806
+Observable     : rnadna_ReporterOut_2
+Time conversion: 60.0 model units per minute
+
+BEST-FIT PARAMETERS
+------------------------------------------------------------
+ktx__                = 1.75861444e-02
+kmat__               = 4.89530499e-03
+kx__                 = 1.33926712e-06
+krev__               = 8.09997846e-07
+krep__               = 3.33639349e-06
+
+FIT STATISTICS
+------------------------------------------------------------
+Best cost (0.5 * SSE)  = 2.22295762e-01
+Global normalized RMSE = 1.74503508e-02
+Optimizer success      = True
+Optimizer message      = `ftol` termination condition is satisfied.
+
+RMSE PER DATASET
+------------------------------------------------------------
+fig2d_50nM_I0            | RMSE=1.07860406e+02 | nRMSE=6.60967476e-01
+fig2d_50nM_I1            | RMSE=2.27763732e+01 | nRMSE=4.79876827e-02
+fig2d_25nM_I1            | RMSE=1.91483508e+01 | nRMSE=4.02772434e-02
+fig2d_12p5nM_I1          | RMSE=1.90185536e+01 | nRMSE=4.01057771e-02
+fig2d_6p25nM_I1          | RMSE=1.16012173e+01 | nRMSE=2.46129696e-02
+fig2d_2p5nM_I1           | RMSE=1.88509266e+01 | nRMSE=3.96758781e-02
+
+BOUNDARY PROXIMITY
+------------------------------------------------------------
+ktx__           | value=1.75861444e-02 | not within 5% of bound
+kmat__          | value=4.89530499e-03 | not within 5% of bound
+kx__            | value=1.33926712e-06 | not within 5% of bound
+krev__          | value=8.09997846e-07 | near upper bound
+krep__          | value=3.33639349e-06 | near lower bound
