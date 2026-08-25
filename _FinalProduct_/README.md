@@ -152,6 +152,57 @@ Model-specific keys must exactly match the XML filename without `.xml`. For exam
 
 The current configuration also contains advanced Excel-layout, cutoff, solver-tolerance, time-conversion, and output-directory settings. Keep their current values unless your data layout or model units require a change.
 
+### Shared condition roles and model-specific names
+
+Code 1 uses a shared experimental interface so the same condition can be applied to models with different SBML species names.
+
+| JSON section | Purpose |
+|---|---|
+| `conditions` | Assigns numerical initial values to shared experimental roles. |
+| `model_species_aliases` | Translates each shared role into a model-specific SBML species ID. |
+| `observable_id` | Gives the default output species. |
+| `model_observable_ids` | Gives a model-specific output species when it differs from the default. |
+
+```json
+{
+  "observable_id": "output",
+  "conditions": {
+    "condition_1": {
+      "data_column": "Condition 1",
+      "initial_values": {
+        "input": 50.0
+      }
+    },
+    "condition_2": {
+      "data_column": "Condition 2",
+      "initial_values": {
+        "input": 10.0
+      }
+    }
+  },
+  "model_species_aliases": {
+    "model_1": {
+      "input": "model1_input_name"
+    },
+    "model_2": {
+      "input": "model2_input_name"
+    }
+  },
+  "model_observable_ids": {
+    "model_1": "model1_output_name",
+    "model_2": "model2_output_name"
+  }
+}
+```
+
+For `condition_2`, Code 1 sets `model1_input_name(0) = 10.0` in `model_1` and `model2_input_name(0) = 10.0` in `model_2`.
+
+The alias name on the left must exactly match a name in `initial_values`. The name on the right must exactly match an SBML species ID. The outer model name must exactly match the XML filename without `.xml`.
+
+Only include species whose initial values Code 1 must override. Internal species should normally retain their SBML initial values. The measured output is configured separately and belongs in `initial_values` only when its starting concentration must also be overridden.
+
+Every shared initial-value role must be supported by each candidate model, either as the same SBML ID or through an alias. If only one candidate has an amplification variable, do not put that variable in the shared Code 1 conditions; define it later in that model's Code 2 interface.
+
 ### Fitting-effort settings
 
 | Setting | Meaning |
