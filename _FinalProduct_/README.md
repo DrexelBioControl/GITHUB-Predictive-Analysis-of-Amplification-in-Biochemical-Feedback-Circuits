@@ -152,6 +152,16 @@ Model-specific keys must exactly match the XML filename without `.xml`. For exam
 
 The current configuration also contains advanced Excel-layout, cutoff, solver-tolerance, time-conversion, and output-directory settings. Keep their current values unless your data layout or model units require a change.
 
+### Fitting-effort settings
+
+| Setting | Meaning |
+|---|---|
+| `n_starts` | Number of different starting parameter sets tried for each model. More starts reduce the chance of accepting a poor local optimum but increase runtime. |
+| `random_seed` | Makes the generated starting sets reproducible. Keep it fixed when comparing models or repeating an analysis. The particular integer is arbitrary. |
+| `max_nfev` | Maximum number of model evaluations allowed for each optimization start. Larger values give difficult fits more opportunity to converge but increase runtime. |
+
+The prototype values `8`, `20260806`, and `400` are reasonable starting points. Runtime increases with both `n_starts` and `max_nfev`.
+
 ### Fit versus load
 
 At the top of Code 1, use:
