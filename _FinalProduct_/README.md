@@ -341,6 +341,5 @@ Code 2 saves the amplification figure to the path in `output_file`, currently `f
 - All fitted parameter bounds must satisfy `0 < lower < upper` because fitting is performed in log space.
 - A held-out plot is only produced when `all_conditions` contains a condition absent from `fit_conditions`.
 - A parameter at its fitting bound may be poorly identified or may need a wider scientifically justified bound.
-- If all fitting data use zero amplification control, parameters that act only through amplification may not be identifiable. Treat those amplification predictions as exploratory until amplification data or independent parameter values are available.
 - When an XML file changes, delete only its matching file in `generated_models/` and rerun Code 1. Do not edit generated model files manually.
 - The adapter supports the SBML features used here, but not arbitrary assignment rules, rate rules, algebraic rules, or events.
