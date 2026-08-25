@@ -83,13 +83,17 @@ This is a valid JSON example. Replace the example filenames, condition names, SB
     "condition_1": {
       "data_column": "Condition 1",
       "initial_values": {
-        "input": 50.0
+        "condition_species_1": 50.0,
+        "fixed_species_1": 25.0,
+        "fixed_species_2": 500.0
       }
     },
     "condition_2": {
       "data_column": "Condition 2",
       "initial_values": {
-        "input": 10.0
+        "condition_species_1": 10.0,
+        "fixed_species_1": 25.0,
+        "fixed_species_2": 500.0
       }
     }
   },
@@ -121,7 +125,9 @@ This is a valid JSON example. Replace the example filenames, condition names, SB
   },
   "model_species_aliases": {
     "model_with_different_names": {
-      "input": "local_input"
+      "condition_species_1": "local_species_1",
+      "fixed_species_1": "local_species_2",
+      "fixed_species_2": "local_species_3"
     }
   },
   "model_observable_ids": {
@@ -141,7 +147,7 @@ This is a valid JSON example. Replace the example filenames, condition names, SB
 ### How to fill the Code 1 JSON
 
 1. **Choose models and data.** Put candidate XML files in `models/`. Set `excel_file` and `excel_sheet`.
-2. **Define every experimental condition.** Each key in `conditions` is your own condition label. `data_column` must match the experimental column. `initial_values` contains only species whose starting values Code 1 must override. It may contain just the input; add a gate, reporter, fuel, or other fixed species only when the model and experiment require it.
+2. **Define every experimental condition.** Each key in `conditions` is your own condition label. `data_column` must match the experimental column. `initial_values` contains SBML species whose values Code 1 must set at time zero. These may be varied condition species, templates, pools, gates, reporters, fuels, or other fixed species; they are not automatically the analysis input or measured output.
 3. **Choose fitted and held-out conditions.** Put training conditions in `fit_conditions`. Put training and prediction conditions in `all_conditions`. Anything only in `all_conditions` is predicted without refitting.
 4. **Define shared parameters.** Put parameters used by most models in `fit_params`, their starting values in `all_param_central`, and positive lower/upper bounds in `custom_param_bounds`.
 5. **Add model-specific parameter rules if needed.** Use `model_fit_params`, `model_param_central`, and `model_param_bounds` for different parameter IDs. `model_fixed_parameters` may set parameters that are not fitted.
@@ -152,14 +158,14 @@ Model-specific keys must exactly match the XML filename without `.xml`. For exam
 
 The current configuration also contains advanced Excel-layout, cutoff, solver-tolerance, time-conversion, and output-directory settings. Keep their current values unless your data layout or model units require a change.
 
-### Shared condition roles and model-specific names
+### Shared initial-species roles and model-specific names
 
-Code 1 uses a shared experimental interface so the same condition can be applied to models with different SBML species names.
+Code 1 uses shared names for initial species so the same experimental condition can be applied to models with different ODE structures and SBML IDs.
 
 | JSON section | Purpose |
 |---|---|
-| `conditions` | Assigns numerical initial values to shared experimental roles. |
-| `model_species_aliases` | Translates each shared role into a model-specific SBML species ID. |
+| `conditions` | Assigns time-zero values to shared initial-species roles. |
+| `model_species_aliases` | Translates each shared initial-species role into a model-specific SBML species ID. |
 | `observable_id` | Gives the default output species. |
 | `model_observable_ids` | Gives a model-specific output species when it differs from the default. |
 
@@ -170,22 +176,26 @@ Code 1 uses a shared experimental interface so the same condition can be applied
     "condition_1": {
       "data_column": "Condition 1",
       "initial_values": {
-        "input": 50.0
+        "condition_species_1": 50.0,
+        "fixed_species_1": 25.0
       }
     },
     "condition_2": {
       "data_column": "Condition 2",
       "initial_values": {
-        "input": 10.0
+        "condition_species_1": 10.0,
+        "fixed_species_1": 25.0
       }
     }
   },
   "model_species_aliases": {
     "model_1": {
-      "input": "model1_input_name"
+      "condition_species_1": "model1_species_name_1",
+      "fixed_species_1": "model1_species_name_2"
     },
     "model_2": {
-      "input": "model2_input_name"
+      "condition_species_1": "model2_species_name_1",
+      "fixed_species_1": "model2_species_name_2"
     }
   },
   "model_observable_ids": {
@@ -195,11 +205,15 @@ Code 1 uses a shared experimental interface so the same condition can be applied
 }
 ```
 
-For `condition_2`, Code 1 sets `model1_input_name(0) = 10.0` in `model_1` and `model2_input_name(0) = 10.0` in `model_2`.
+For `condition_2`, Code 1 sets `model1_species_name_1(0) = 10.0` in `model_1` and `model2_species_name_1(0) = 10.0` in `model_2`. It also sets each model's mapped fixed species to `25.0`.
 
 The alias name on the left must exactly match a name in `initial_values`. The name on the right must exactly match an SBML species ID. The outer model name must exactly match the XML filename without `.xml`.
 
-Only include species whose initial values Code 1 must override. Internal species should normally retain their SBML initial values. The measured output is configured separately and belongs in `initial_values` only when its starting concentration must also be overridden.
+These entries set time-zero values for SBML species. For a dynamic species this is an ODE initial condition; for a constant species it represents a fixed model quantity. Biologically, the entries may be template or pool concentrations rather than the input signal or measured output. Only include species whose values Code 1 must override; other internal species should retain their SBML values.
+
+In the current seesaw configuration, `dna_Input_1`, `dna_Gate_1_2`, and `dna_Reporter_2` are initialized template-related model species. The measured output is instead `rnadna_ReporterOut_2` for the Figure 2D models or `ROL` for the active-gate model. Therefore, an initialized reporter template or pool is not automatically the observable.
+
+Use descriptive shared names such as `input_template`, `gate_template`, and `reporter_template` when the biological roles are known. For a completely general template, placeholders such as `condition_species_1` and `fixed_species_1` make clear that these are initial species overrides. Avoid `local_variable_1` on the left side because the local SBML name belongs on the right side of the alias.
 
 Every shared initial-value role must be supported by each candidate model, either as the same SBML ID or through an alias. If only one candidate has an amplification variable, do not put that variable in the shared Code 1 conditions; define it later in that model's Code 2 interface.
 
