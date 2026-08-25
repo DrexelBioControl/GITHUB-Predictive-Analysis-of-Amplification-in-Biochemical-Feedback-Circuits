@@ -148,7 +148,7 @@ This is a valid JSON example. Replace the example filenames, condition names, SB
 
 1. **Choose models and data.** Put candidate XML files in `models/`. Set `excel_file` and `excel_sheet`.
 2. **Define every experimental condition.** Each key in `conditions` is your own condition label. `data_column` must match the experimental column. `initial_values` contains SBML species whose values Code 1 must set at time zero. These may be varied condition species, templates, pools, gates, reporters, fuels, or other fixed species; they are not automatically the analysis input or measured output.
-3. **Choose fitted and held-out conditions.** Put training conditions in `fit_conditions`. Put training and prediction conditions in `all_conditions`. Anything only in `all_conditions` is predicted without refitting.
+3. **Choose fitted and held-out conditions.** Put fitting conditions in `fit_conditions`. Put fitting and prediction conditions in `all_conditions`. Anything only in `all_conditions` is predicted without refitting.
 4. **Define shared parameters.** Put parameters used by most models in `fit_params`, their starting values in `all_param_central`, and positive lower/upper bounds in `custom_param_bounds`.
 5. **Add model-specific parameter rules if needed.** Use `model_fit_params`, `model_param_central`, and `model_param_bounds` for different parameter IDs. `model_fixed_parameters` may set parameters that are not fitted.
 6. **Map different species names.** The names in each condition are shared names. If one SBML uses different names, translate them with `model_species_aliases`. Set a different output with `model_observable_ids`. Do not rename the SBML file internally.
@@ -211,9 +211,7 @@ The alias name on the left must exactly match a name in `initial_values`. The na
 
 These entries set time-zero values for SBML species. For a dynamic species this is an ODE initial condition; for a constant species it represents a fixed model quantity. Biologically, the entries may be template or pool concentrations rather than the input signal or measured output. Only include species whose values Code 1 must override; other internal species should retain their SBML values.
 
-In the current seesaw configuration, `dna_Input_1`, `dna_Gate_1_2`, and `dna_Reporter_2` are initialized template-related model species. The measured output is instead `rnadna_ReporterOut_2` for the Figure 2D models or `ROL` for the active-gate model. Therefore, an initialized reporter template or pool is not automatically the observable.
-
-Use descriptive shared names such as `input_template`, `gate_template`, and `reporter_template` when the biological roles are known. For a completely general template, placeholders such as `condition_species_1` and `fixed_species_1` make clear that these are initial species overrides. Avoid `local_variable_1` on the left side because the local SBML name belongs on the right side of the alias.
+'initial_values' contains shared names for SBML species whose time-zero values must be overridden. Use names that describe their experimental roles, then map them to exact model-specific SBML IDs with 'model_species_aliases'. Configure the measured output separately with 'observable_id' or 'model_observable_ids'.
 
 Every shared initial-value role must be supported by each candidate model, either as the same SBML ID or through an alias. If only one candidate has an amplification variable, do not put that variable in the shared Code 1 conditions; define it later in that model's Code 2 interface.
 
@@ -225,7 +223,7 @@ Every shared initial-value role must be supported by each candidate model, eithe
 | `random_seed` | Makes the generated starting sets reproducible. Keep it fixed when comparing models or repeating an analysis. The particular integer is arbitrary. |
 | `max_nfev` | Maximum number of model evaluations allowed for each optimization start. Larger values give difficult fits more opportunity to converge but increase runtime. |
 
-The prototype values `8`, `20260806`, and `400` are reasonable starting points. Runtime increases with both `n_starts` and `max_nfev`.
+Runtime increases with both `n_starts` and `max_nfev`.
 
 ### Fit versus load
 
