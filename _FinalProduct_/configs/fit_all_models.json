@@ -16,8 +16,7 @@
     "fig2d_50nM_I1",
     "fig2d_25nM_I1",
     "fig2d_12p5nM_I1",
-    "fig2d_6p25nM_I1",
-    "fig2d_2p5nM_I1"
+    "fig2d_6p25nM_I1"
   ],
   "all_conditions": [
     "fig2d_50nM_I0",
@@ -84,9 +83,76 @@
     "krev__",
     "krep__"
   ],
-  "model_fit_params": {},
-  "model_param_central": {},
-  "model_param_bounds": {},
+  "model_fit_params": {
+    "model1_activegate_fuel": [
+      "k_txn",
+      "ksd",
+      "kfsd",
+      "krev",
+      "kf_rep",
+      "kRz",
+      "klkg",
+      "basal_frac"
+    ]
+  },
+  "model_param_central": {
+    "model1_activegate_fuel": {
+      "k_txn": 0.00962763757,
+      "ksd": 9.97801643e-06,
+      "kfsd": 2.29972555e-06,
+      "krev": 1.42705205e-06,
+      "kf_rep": 4.77116458e-06,
+      "kRz": 0.0406799972,
+      "klkg": 6.98976431e-05,
+      "basal_frac": 0.0220510273
+    }
+  },
+  "model_param_bounds": {
+    "model1_activegate_fuel": {
+      "k_txn": [
+        0.000962763757,
+        1.0
+      ],
+      "ksd": [
+        1e-09,
+        1e-04
+      ],
+      "kfsd": [
+        2.29972555e-07,
+        1e-02
+      ],
+      "krev": [
+        1.42705205e-07,
+        1e-02
+      ],
+      "kf_rep": [
+        1e-08,
+        4.77116458e-05
+      ],
+      "kRz": [
+        0.00406799972,
+        0.406799972
+      ],
+      "klkg": [
+        1e-09,
+        0.000698976431
+      ],
+      "basal_frac": [
+        1e-10,
+        1.0
+      ]
+    }
+  },
+  "model_species_aliases": {
+    "model1_activegate_fuel": {
+      "dna_Input_1": "IN_temp",
+      "dna_Gate_1_2": "RSD_temp",
+      "dna_Reporter_2": "DRL"
+    }
+  },
+  "model_observable_ids": {
+    "model1_activegate_fuel": "ROL"
+  },
   "all_param_central": {
     "ktx__": 0.013,
     "kmat__": 0.00417,

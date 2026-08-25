@@ -1,11 +1,17 @@
 {
   "run_name": "Figure2D_compare_all_SBML_models",
   "selection_metric": "global_normalized_rmse",
-  "model_name": "Figure2D_base_model_decay",
-  "model_file": "C:\\Users\\namhn\\Documents\\_DrexelNist_\\_FinalProduct_\\models\\Figure2D_base_model_decay.xml",
-  "fit_results_file": "C:\\Users\\namhn\\Documents\\_DrexelNist_\\_FinalProduct_\\results\\Figure2D_base_model_decay\\Figure2D_base_model_decay_results.npz",
-  "fitted_parameters_file": "C:\\Users\\namhn\\Documents\\_DrexelNist_\\_FinalProduct_\\results\\Figure2D_base_model_decay\\fitted_parameters.csv",
-  "global_normalized_rmse": 0.017442454453866156,
-  "observable_id": "rnadna_ReporterOut_2",
+  "model_name": "model1_activegate_fuel",
+  "model_file": "C:\\Users\\namhn\\GitHub Projects\\GITHUB-Predictive-Analysis-of-Amplification-in-Biochemical-Feedback-Circuits\\_FinalProduct_\\models\\model1_activegate_fuel.xml",
+  "fit_results_file": "C:\\Users\\namhn\\GitHub Projects\\GITHUB-Predictive-Analysis-of-Amplification-in-Biochemical-Feedback-Circuits\\_FinalProduct_\\results\\model1_activegate_fuel\\model1_activegate_fuel_results.npz",
+  "fitted_parameters_file": "C:\\Users\\namhn\\GitHub Projects\\GITHUB-Predictive-Analysis-of-Amplification-in-Biochemical-Feedback-Circuits\\_FinalProduct_\\results\\model1_activegate_fuel\\fitted_parameters.csv",
+  "global_normalized_rmse": 0.0036331193379159446,
+  "held_out_normalized_rmse": 0.12302321307191473,
+  "observable_id": "ROL",
+  "species_aliases": {
+    "dna_Input_1": "IN_temp",
+    "dna_Gate_1_2": "RSD_temp",
+    "dna_Reporter_2": "DRL"
+  },
   "model_time_units_per_minute": 60.0
 }

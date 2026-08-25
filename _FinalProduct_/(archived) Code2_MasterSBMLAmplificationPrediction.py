@@ -4,16 +4,14 @@
 #
 # PURPOSE OF THIS FILE
 # --------------------
-# This is the generalized SBML version of the previous Part 2 workflow.
 # Part 1 asks, "Which candidate mechanism best explains the measured data?"
-# Part 2 then asks, "What does that fitted mechanism predict outside the exact
-# conditions used for fitting?"
+# Part 2 then asks, "What does that mechanism predict for amplification across different fuel and leak conditions?"
 #
-# The information flow is:
+# The flow is:
 #
-#     selected_model.json from Part 1
+#     selected SBML mechanism from Part 1
 #              +
-#     selected SBML mechanism
+#     selected_model.json
 #              +
 #     best-fit parameter values
 #              ↓
@@ -23,12 +21,11 @@
 #              ↓
 #     save prediction figures
 #
-# The current Figure 2D proof-of-concept candidates contain no fuel species,
-# so this file is intentionally disabled in the JSON config. When genuine
-# fuel-containing SBML models are added:
-#   1. edit configs/amplification_prediction.json
-#   2. set "enabled": true
-#   3. provide the correct SBML species, reaction, and sweep IDs
+# This study considers feedback amplifiers. A feedback amplifier involves a fuel species that drives the feedback mecahism,
+# and a leak species that produces output even in the absence of input.
+#
+# Note: The current Fig2D SciAdv proof-of-concept example contain no fuel species,
+# so this file assigns dummy species and rates for fuel and leak.
 # ============================================================
 
 from __future__ import annotations

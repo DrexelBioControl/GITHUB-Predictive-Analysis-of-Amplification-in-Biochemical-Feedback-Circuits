@@ -164,6 +164,28 @@ MODEL_FIXED_PARAMETERS = {
     ).items()
 }
 
+# Most models use the shared species IDs from the configuration. Models with
+# different SBML naming conventions can map each shared ID to their local ID.
+MODEL_SPECIES_ALIASES = {
+    str(model_name): {
+        str(shared_species_id): str(model_species_id)
+        for shared_species_id, model_species_id in species_aliases.items()
+    }
+    for model_name, species_aliases in config.get(
+        "model_species_aliases",
+        {},
+    ).items()
+}
+
+# Most models use the shared observable. A model may provide its local output ID.
+MODEL_OBSERVABLE_IDS = {
+    str(model_name): str(observable_id)
+    for model_name, observable_id in config.get(
+        "model_observable_ids",
+        {},
+    ).items()
+}
+
 N_STARTS_REQUESTED = int(config["n_starts"])
 RANDOM_SEED = int(config["random_seed"])
 MAX_NFEV = int(config.get("max_nfev", 1000))
@@ -631,6 +653,23 @@ def get_model_fit_setup(model_name):
     )
 
 
+def get_model_species_setup(model_name):
+    # Map the shared experimental species interface onto one model's SBML IDs.
+    species_aliases = dict(
+        MODEL_SPECIES_ALIASES.get(
+            model_name,
+            {},
+        )
+    )
+
+    observable_id = MODEL_OBSERVABLE_IDS.get(
+        model_name,
+        OBSERVABLE_ID,
+    )
+
+    return species_aliases, observable_id
+
+
 # ============================================================
 # 11) SBML VALIDATION HELPERS
 # ============================================================
@@ -694,10 +733,17 @@ def validate_model(model_file):
 
     inventory = inspect_sbml(model_file)
 
-    required_species = {OBSERVABLE_ID}
+    species_aliases, observable_id = get_model_species_setup(
+        model_name
+    )
+
+    required_species = {observable_id}
 
     for d in datasets:
-        required_species.update(d["initial_values"])
+        required_species.update(
+            species_aliases.get(species_id, species_id)
+            for species_id in d["initial_values"]
+        )
 
     missing_species = sorted(
         required_species.difference(inventory["species_ids"])
@@ -740,6 +786,11 @@ def validate_model(model_file):
             f"SBMLtoODEpy could not generate/import {model_file.name}: {exc}"
         ) from exc
 
+    # Attach the model-specific interface so every downstream simulation uses
+    # the correct SBML species and observable without changing the datasets.
+    model.configured_species_aliases = species_aliases
+    model.configured_observable_id = observable_id
+
     return model, inventory
 
 
@@ -771,12 +822,26 @@ def predict(
         return np.full_like(t_eval_min, 1e9, dtype=float)
 
     try:
+        # Translate shared condition IDs into this model's local SBML IDs.
+        model_initial_values = {
+            rr.configured_species_aliases.get(species_id, species_id): value
+            for species_id, value in dataset["initial_values"].items()
+        }
+
+        # Ignore shared defaults that do not belong to this model. Fitted and
+        # fixed parameters are still validated before optimization begins.
+        model_parameters = {
+            parameter_id: value
+            for parameter_id, value in params.items()
+            if parameter_id in rr.parameter_ids
+        }
+
         prediction = rr.simulate(
-            initial_values=dataset["initial_values"],
-            parameters=params,
+            initial_values=model_initial_values,
+            parameters=model_parameters,
             fixed_parameters=fixed_parameters,
             t_eval=t_eval_model,
-            observable_id=OBSERVABLE_ID,
+            observable_id=rr.configured_observable_id,
             method="LSODA",
             rtol=RTOL,
             atol=ATOL,
@@ -1177,6 +1242,8 @@ def fit_or_load_model(
         "model_name": model_name,
         "model_file": model_file,
         "rr": rr,
+        "species_aliases": dict(rr.configured_species_aliases),
+        "observable_id": rr.configured_observable_id,
         "fixed_parameters": fixed_parameters,
         "fit_params": model_fit_params,
         "param_bounds": model_param_bounds,
@@ -1255,6 +1322,7 @@ comparison_rows = []
 for result in model_results:
     model_name = result["model_name"]
     rr = result["rr"]
+    observable_id = result["observable_id"]
     params = result["best_fit_params"]
     fixed_parameters = result["fixed_parameters"]
 
@@ -1558,7 +1626,7 @@ for result in model_results:
             f"Random seed    : {RANDOM_SEED}\n"
         )
         f.write(
-            f"Observable     : {OBSERVABLE_ID}\n"
+            f"Observable     : {observable_id}\n"
         )
         f.write(
             f"Time conversion: "
@@ -1736,7 +1804,8 @@ selected_model_record = {
             "global_normalized_rmse"
         ]
     ),
-    "observable_id": OBSERVABLE_ID,
+    "observable_id": selected_result["observable_id"],
+    "species_aliases": selected_result["species_aliases"],
     "model_time_units_per_minute": (
         MODEL_TIME_UNITS_PER_MINUTE
     ),
