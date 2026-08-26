@@ -43,8 +43,6 @@ conda env create -f environment.yml
 conda activate SBMLtoODEpyWorkflow
 ```
 
-Run commands from the `_FinalProduct_` folder. Files beginning with `(archived)` are older versions.
-
 ## Important terms
 
 | Term | Meaning |
@@ -58,6 +56,30 @@ Run commands from the `_FinalProduct_` folder. Files beginning with `(archived)`
 | Observable | The simulated species compared with the measured data. |
 | ON/OFF input | The two input values compared by Code 2. |
 | Amplification reference | The amplification-control value used as the unamplified baseline. It is different from the OFF input. |
+
+## Data file structure
+
+Code 1 assumes that the experimental data are stored in one Excel worksheet with the following structure:
+
+| Excel row | Column A | Column B | Column C | Additional columns |
+|---|---|---|---|---|
+| 1 | Blank | Condition 1 name | Condition 2 name | One name per additional condition |
+| 2 | Time label and units | Measurement label | Measurement label | Measurement label |
+| 3 onward | Numeric time values | Condition 1 measurements | Condition 2 measurements | Measurements for each additional condition |
+
+The first column contains the time points shared by all conditions. Each remaining column contains one complete experimental time course.
+
+For example:
+
+|  | Condition 1 | Condition 2 |
+|---|---:|---:|
+| Time (min) | Signal | Signal |
+| 0 | 0.000 | 0.000 |
+| 5 | 0.125 | 0.080 |
+| 10 | 0.260 | 0.170 |
+
+Each `data_column` value in the Code 1 JSON must exactly match a condition name in the first Excel row. Measurements are multiplied by `data_signal_multiplier` after loading; use `1.0` when the spreadsheet values are already in the model's required units. Replicate columns are not automatically averaged.
+
 
 ## Code 1: fit and compare models
 
@@ -240,7 +262,8 @@ Edit [`configs/amplification_prediction_general.json`](configs/amplification_pre
 }
 ```
 
-Set `enabled` to `true` to run Code 2. Each `model_interfaces` key must match an XML filename without `.xml`.
+Set `enabled` to `true` to run Code 2. 'enabled' is a safety switch if you wish to automatically run Code 2 after Code 1.
+Each `model_interfaces` key must match an XML filename without `.xml`.
 
 | Field | Meaning |
 |---|---|
@@ -299,7 +322,15 @@ Use `"amplification_control": null` for a model without an amplification variabl
 }
 ```
 
-JSON `null` disables the sweep. To test sensitivity without refitting, replace these with an exact SBML parameter ID and a list of values.
+JSON 'null' disables the optional secondary parameter sweep. To vary another model parameter during prediction without refitting, set 'sweep_parameter' to its exact SBML parameter ID and provide a list of values to sweep through in 'sweep_values'.
+For example:
+
+```json
+{
+"sweep_parameter": "leak_rate",
+"sweep_values": [0.000001, 0.00001, 0.0001]
+}
+```
 
 ### 4. Run Code 2
 
@@ -309,15 +340,15 @@ python .\Code2_MasterSBMLAmplificationPrediction_GeneralInterfaces.py
 
 The figure is saved to the configured `output_file`, currently `figures/amplification_prediction_general_interface.png`.
 
-## Recommended analysis
+## To perform a leave-one-out (LOO) model validation
 
-1. Fit candidate models with at least one held-out condition.
-2. Rank them using `held_out_normalized_rmse` and inspect the held-out plots.
-3. Repeat with other held-out conditions if full leave-one-out validation is needed.
-4. Choose the model structure.
-5. Run a final Code 1 fit using all conditions to obtain final parameter estimates.
-6. Confirm that the selected model has a Code 2 interface and amplification control.
-7. Run Code 2.
+1. List every experimental condition in `all_conditions`.
+2. For each run, omit one condition from `fit_conditions` while keeping it in `all_conditions`.
+3. Set `MODE = "fit"` so the parameters are estimated using only the remaining conditions.
+4. Give each run a different `run_name` or output location so previous results are not overwritten.
+5. Run Code 1 and inspect the held-out prediction plot and `held_out_rmse.csv`.
+6. Repeat until every condition has been held out once.
+
 
 ## Advanced settings and troubleshooting
 
