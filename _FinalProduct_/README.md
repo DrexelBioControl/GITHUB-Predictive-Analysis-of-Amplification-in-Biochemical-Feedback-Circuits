@@ -9,7 +9,7 @@ This project fits candidate SBML models to time-course data, compares their pred
 - [Data file structure](#data-file-structure)
 - [Code 1: fit and compare models](#code-1-fit-and-compare-models)
 - [Code 2: predict amplification](#code-2-predict-amplification)
-- [Recommended analysis](#recommended-analysis)
+- [To perform a leave-one-out (LOO) model validation](#to-perform-a-leave-one-out-loo-model-validation)
 - [Advanced settings and troubleshooting](#advanced-settings-and-troubleshooting)
 
 ## Workflow
