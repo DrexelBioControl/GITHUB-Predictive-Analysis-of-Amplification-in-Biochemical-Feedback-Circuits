@@ -324,7 +324,7 @@ Use `"amplification_control": null` for a model without an amplification variabl
 }
 ```
 
-JSON 'null' disables the optional secondary parameter sweep. To vary another model parameter during prediction without refitting, set 'sweep_parameter' to its exact SBML parameter ID and provide a list of values to sweep through in 'sweep_values'.
+JSON `null` disables the optional secondary parameter sweep. To vary another model parameter during prediction without refitting, set `sweep_parameter` to its exact SBML parameter ID and provide a list of values to sweep through in `sweep_values`.
 For example:
 
 ```json
@@ -347,7 +347,7 @@ The figure is saved to the configured `output_file`, currently `figures/amplific
 1. List every experimental condition in `all_conditions`.
 2. For each run, omit one condition from `fit_conditions` while keeping it in `all_conditions`.
 3. Set `MODE = "fit"` so the parameters are estimated using only the remaining conditions.
-4. Give each run a different `run_name` or output location so previous results are not overwritten.
+4. Give each run different `results_dir` and `figures_dir` values so its results are not overwritten. A different `run_name` may also be used to identify the run.
 5. Run Code 1 and inspect the held-out prediction plot and `held_out_rmse.csv`.
 6. Repeat until every condition has been held out once.
 
