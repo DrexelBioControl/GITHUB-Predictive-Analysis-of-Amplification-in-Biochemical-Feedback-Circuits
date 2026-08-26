@@ -6,6 +6,7 @@ This project fits candidate SBML models to time-course data, compares their pred
 
 - [Workflow](#workflow)
 - [Important terms](#important-terms)
+- [Data file structure](#data-file-structure)
 - [Code 1: fit and compare models](#code-1-fit-and-compare-models)
 - [Code 2: predict amplification](#code-2-predict-amplification)
 - [Recommended analysis](#recommended-analysis)
