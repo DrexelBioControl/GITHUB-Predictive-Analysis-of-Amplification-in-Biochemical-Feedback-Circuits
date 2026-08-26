@@ -63,9 +63,10 @@ Code 1 assumes that the experimental data are stored in one Excel worksheet with
 
 | Excel row | Column A | Column B | Column C | Additional columns |
 |---|---|---|---|---|
-| 1 | Blank | Condition 1 name | Condition 2 name | One name per additional condition |
-| 2 | Time label and units | Measurement label | Measurement label | Measurement label |
-| 3 onward | Numeric time values | Condition 1 measurements | Condition 2 measurements | Measurements for each additional condition |
+| 1 | Blank | Condition 1 name | Condition 2 name | ... |
+| 2 | Time label and units | Measurement label | Measurement label | ... |
+| 3 | Numeric time values | Condition 1 measurements | Condition 2 measurements | ... |
+| ... | ... | ... | ... | ... |
 
 The first column contains the time points shared by all conditions. Each remaining column contains one complete experimental time course.
 
